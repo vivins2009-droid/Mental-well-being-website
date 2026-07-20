@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Habits | GoalLab</title>
+  <link rel="stylesheet" href="styles.css?v=habit-reflection-buttons">
+  <script src="app.js?v=habit-reflection-buttons" defer></script>
+</head>
+<body data-page="habits">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <nav class="nav-list" aria-label="Main navigation">
+        <a class="nav-item" href="index.html#home">Home</a>
+        <a class="nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="nav-item" href="goals.html">Goals</a>
+        <a class="nav-item active" href="habits.html">Habits</a>
+        <a class="nav-item" href="rewards.html">Rewards</a>
+      </nav>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Habit tracker</p>
+          <h1>Make consistency feel obvious.</h1>
+        </div>
+        <div class="top-actions">
+          <div class="today-readout" data-today-readout></div>
+          <a class="text-button link-button back-link" href="index.html#dashboard">Back to dashboard</a>
+        </div>
+      </header>
+
+      <aside class="end-day-reminder" data-end-day-reminder hidden aria-live="polite"></aside>
+
+      <section class="panel command-panel add-habit-panel habit-launch-panel">
+        <div class="panel-hologram habit-launch-hologram" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Add habit</p>
+            <h2>Build your daily tracker</h2>
+          </div>
+        </div>
+        <p class="form-guidance">Add a habit here, then use today's checklist or any recent day to check it off and build your streak.</p>
+
+        <form class="entry-form habit-entry-form" data-habit-form>
+          <label>
+            Habit name
+            <input name="name" type="text" placeholder="Example: Read 20 pages" required>
+          </label>
+          <label class="category-field">
+            Category
+            <select name="category" aria-label="Habit category">
+              <option value="Health">Health</option>
+              <option value="School">School</option>
+              <option value="Hobbies">Hobbies</option>
+              <option value="Home">Home</option>
+              <option value="Friends">Friends</option>
+            </select>
+            <span class="category-picker" data-category-picker aria-label="Choose habit category"></span>
+            <small>Choose the life area this habit supports.</small>
+          </label>
+          <div class="form-actions">
+            <button class="text-button" type="submit">Save habit</button>
+          </div>
+        </form>
+
+        <div class="save-guidance" data-save-status="habit" hidden aria-live="polite">
+          <div>
+            <strong>Habit saved.</strong>
+            <span>You can add another habit now or return to the dashboard to see it in your habit score.</span>
+          </div>
+          <div class="guide-actions">
+            <button class="ghost-button" type="button" data-add-another="habit">Add another habit</button>
+            <a class="text-button link-button" href="index.html#dashboard">Return to dashboard</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="metric-grid command-metric-grid habit-command-deck" aria-label="Habit summary">
+        <article class="metric-card primary command-card reactor-card habit-reactor-card">
+          <div class="metric-visual reactor-visual" data-command-ring="habitScore" aria-hidden="true">
+            <span class="reactor-ring outer"></span>
+            <span class="reactor-ring middle"></span>
+            <span class="reactor-core"></span>
+            <strong data-metric="habitScore">0%</strong>
+          </div>
+          <strong class="reactor-badge" data-metric="habitScore" aria-hidden="true">0%</strong>
+          <div class="metric-copy">
+            <span>Today habit score</span>
+            <strong data-metric="habitScore">0%</strong>
+            <div class="progress-track"><span data-bar="habitScore"></span></div>
+          </div>
+        </article>
+        <article class="metric-card command-card cadence-card">
+          <div class="metric-visual cadence-visual" data-command-grid="habitScore" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Done today</span>
+            <strong data-metric="checksCompleted">0</strong>
+            <p data-copy="habitPlanned">Out of 0 planned</p>
+          </div>
+        </article>
+        <article class="metric-card command-card tower-card">
+          <div class="metric-visual tower-visual" data-command-tower="bestStreak" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Strongest habit</span>
+            <strong data-metric="strongestHabit">None</strong>
+            <p data-copy="strongestStreak">0 day streak</p>
+          </div>
+        </article>
+        <article class="metric-card command-card beacon-card">
+          <div class="metric-visual beacon-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Missed today</span>
+            <strong data-metric="missedToday">0</strong>
+            <p data-metric="recoveryHabit">None</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace-grid lower">
+        <article class="panel command-panel streak-panel streak-command-panel">
+          <div class="panel-hologram streak-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Streaks</p>
+              <h2>Momentum board</h2>
+            </div>
+          </div>
+          <div class="streak-list" data-streak-list></div>
+          <div class="empty-state compact" data-empty="streaks">
+            <strong>No streaks yet.</strong>
+            <span>Add habits and start checking today.</span>
+          </div>
+          <div class="reward-box">
+            <span>Today</span>
+            <strong data-metric="weeklyChecks">0 / 0 habits done today</strong>
+          </div>
+        </article>
+
+        <article class="panel command-panel weekly-target-panel">
+          <div class="panel-hologram weekly-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Daily target</p>
+              <h2>Progress at a glance</h2>
+            </div>
+          </div>
+          <div class="empty-state compact">
+            <strong data-metric="checksCompleted">0</strong>
+            <span data-copy="habitPlanned">Out of 0 planned</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel command-panel habit-panel weekly-overview-panel">
+        <div class="panel-hologram habit-grid-hologram" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Daily overview</p>
+            <h2>Today and recent days</h2>
+          </div>
+        </div>
+
+        <div class="habit-table" aria-label="Daily habit checklist" data-habit-table></div>
+        <div class="empty-state" data-empty="habitsPage">
+          <strong>No habits yet.</strong>
+          <span>Add your first habit above. Then check it off for today.</span>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

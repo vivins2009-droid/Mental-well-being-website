@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goals | GoalLab</title>
+  <link rel="stylesheet" href="styles.css?v=habit-reflection-buttons">
+  <script src="app.js?v=habit-reflection-buttons" defer></script>
+</head>
+<body data-page="goals">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <nav class="nav-list" aria-label="Main navigation">
+        <a class="nav-item" href="index.html#home">Home</a>
+        <a class="nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="nav-item active" href="goals.html">Goals</a>
+        <a class="nav-item" href="habits.html">Habits</a>
+        <a class="nav-item" href="rewards.html">Rewards</a>
+      </nav>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Goal planner</p>
+          <h1>Turn big dreams into visible steps.</h1>
+        </div>
+        <div class="top-actions">
+          <a class="text-button link-button back-link" href="index.html#dashboard">Back to dashboard</a>
+        </div>
+      </header>
+
+      <section class="metric-grid command-metric-grid goal-command-deck" aria-label="Goal summary">
+        <article class="metric-card primary command-card reactor-card goal-reactor-card">
+          <div class="metric-visual reactor-visual" data-command-ring="goalCompletion" aria-hidden="true">
+            <span class="reactor-ring outer"></span>
+            <span class="reactor-ring middle"></span>
+            <span class="reactor-core"></span>
+            <strong data-metric="goalCompletion">0%</strong>
+          </div>
+          <strong class="reactor-badge" data-metric="goalCompletion" aria-hidden="true">0%</strong>
+          <div class="metric-copy">
+            <span>Goal completion</span>
+            <strong data-metric="goalCompletion">0%</strong>
+            <div class="progress-track"><span data-bar="goalCompletion"></span></div>
+          </div>
+        </article>
+        <article class="metric-card command-card checkpoint-card">
+          <div class="metric-visual checkpoint-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Active goals</span>
+            <strong data-metric="activeGoals">0</strong>
+            <p data-copy="goalAreas">Across 0 life areas</p>
+          </div>
+        </article>
+        <article class="metric-card command-card beacon-card">
+          <div class="metric-visual beacon-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Due soon</span>
+            <strong data-metric="dueSoon">0</strong>
+            <p>Need attention this week</p>
+          </div>
+        </article>
+        <article class="metric-card command-card tower-card">
+          <div class="metric-visual tower-visual" data-command-tower="stepsFinished" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Steps finished</span>
+            <strong data-metric="stepsFinished">0 / 0</strong>
+            <p>Small wins logged</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace-grid goals-layout">
+        <article class="panel command-panel input-bay goal-input-bay">
+          <div class="panel-hologram input-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Add goal</p>
+              <h2>Based on the goal planner sheet</h2>
+            </div>
+          </div>
+          <p class="form-guidance">Add a goal here, then return to the dashboard to track progress, update steps, and see how it affects your overall score.</p>
+
+          <form class="entry-form" data-goal-form>
+            <label>
+              Goal name
+              <input name="title" type="text" placeholder="What do you want to achieve?" required>
+            </label>
+            <label>
+              Area of life
+              <select name="category" required>
+                <option value="Health">Health</option>
+                <option value="School">School</option>
+                <option value="Money">Money</option>
+                <option value="Friends">Friends</option>
+                <option value="Hobbies">Hobbies</option>
+                <option value="Home">Home</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Community">Community</option>
+              </select>
+            </label>
+            <div class="form-field date-field" data-date-field>
+              <label for="goal-deadline-full">Deadline</label>
+              <button class="date-trigger" type="button" data-date-trigger aria-haspopup="dialog" aria-expanded="false" aria-describedby="goal-date-hint-full">
+                <span class="date-value" data-date-value id="goal-date-hint-full">Pick a deadline</span>
+                <span class="date-icon" aria-hidden="true"></span>
+              </button>
+              <input id="goal-deadline-full" name="deadline" type="hidden" data-date-input>
+              <div class="date-popover" data-date-popover hidden role="dialog" aria-label="Choose deadline"></div>
+            </div>
+            <label>
+              Why is this goal important?
+              <textarea name="why" rows="3" placeholder="Write the reason this matters."></textarea>
+            </label>
+            <label>
+              How will you measure success?
+              <input name="measure" type="text" placeholder="Example: finish 8 lessons, run 5K, save Rs 1000">
+            </label>
+            <label>
+              Reward
+              <input name="reward" type="text" placeholder="Optional reward after finishing">
+            </label>
+            <label class="full-width">
+              Micro steps to reach goal
+              <textarea name="steps" rows="4" placeholder="Add one step per line"></textarea>
+            </label>
+            <div class="routine-link-planner full-width" data-routine-link-planner aria-live="polite"></div>
+            <button class="text-button" type="submit">Save goal</button>
+          </form>
+
+          <div class="save-guidance" data-save-status="goal" hidden aria-live="polite">
+            <div>
+              <strong>Goal saved.</strong>
+              <span>You can add another goal now or head back to the dashboard to see it in your progress view.</span>
+            </div>
+            <div class="guide-actions">
+              <button class="ghost-button" type="button" data-add-another="goal">Add another goal</button>
+              <a class="text-button link-button" href="index.html#dashboard">Return to dashboard</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel command-panel balance-map-panel" id="life-areas">
+          <div class="panel-hologram balance-radar-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Life areas</p>
+              <h2>Balance map</h2>
+            </div>
+          </div>
+          <form class="category-form" data-category-form>
+            <label>
+              Add area
+              <input name="categoryName" type="text" placeholder="Example: Faith, Fitness, Coding">
+            </label>
+            <button class="text-button" type="submit">Add area</button>
+          </form>
+          <p class="category-status" data-category-status aria-live="polite"></p>
+          <div class="life-grid" data-life-grid></div>
+        </article>
+      </section>
+
+      <section class="panel command-panel mission-queue-panel">
+        <div class="panel-hologram queue-hologram" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Priority goals</p>
+            <h2>What matters most right now</h2>
+          </div>
+        </div>
+        <div class="goal-list" data-goal-list="goals"></div>
+        <div class="empty-state" data-empty="goalsPage">
+          <strong>No goals yet.</strong>
+          <span>Add your first goal above. It will show here and on the dashboard.</span>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

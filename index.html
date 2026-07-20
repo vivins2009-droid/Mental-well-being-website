@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan well | Teen Progress Tracker</title>
+  <link rel="stylesheet" href="styles.css?v=habit-reflection-buttons">
+  <script src="app.js?v=habit-reflection-buttons" defer></script>
+</head>
+<body data-page="dashboard">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <nav class="nav-list" aria-label="Main navigation">
+        <a class="nav-item active" href="#home">Home</a>
+        <a class="nav-item" href="#dashboard">Dashboard</a>
+        <a class="nav-item" href="#goals-section">Goals</a>
+        <a class="nav-item" href="#habits-section">Habits</a>
+        <a class="nav-item" href="#rewards-section">Rewards</a>
+      </nav>
+    </aside>
+
+    <main class="main-panel">
+      <section class="scroll-section home-section" id="home">
+        <div class="home-hero">
+          <div class="home-copy">
+            <p class="eyebrow">Teen goal and habit tracker</p>
+            <h1>Plan well</h1>
+            <p class="home-brief">
+              A personal progress space for teenagers to set their own goals, break them into visible steps,
+              build daily habits, and connect consistent effort to rewards. Everything starts at zero, so the
+              dashboard only reflects what the user chooses to add.
+            </p>
+            <div class="home-actions">
+              <a class="text-button link-button" href="#dashboard">Enter dashboard</a>
+              <a class="text-button link-button subtle" href="#goals-section">Explore goals</a>
+            </div>
+          </div>
+
+          <div class="home-hud" aria-hidden="true">
+            <span class="hud-ring ring-one"></span>
+            <span class="hud-ring ring-two"></span>
+            <span class="hud-ring ring-three"></span>
+            <span class="hud-scan scan-one"></span>
+            <span class="hud-scan scan-two"></span>
+            <div class="hud-readout">
+              <strong data-metric="overallProgress">0%</strong>
+              <span>Progress signal</span>
+            </div>
+            <div class="hud-chip chip-goals">Goals</div>
+            <div class="hud-chip chip-habits">Habits</div>
+            <div class="hud-chip chip-rewards">Rewards</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scroll-section" id="dashboard">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Teen goal and habit tracker</p>
+            <h1>Build the week you actually want.</h1>
+          </div>
+          <div class="top-actions">
+            <div class="today-readout" data-today-readout></div>
+            <a class="text-button link-button" href="goals.html">Add goal</a>
+            <a class="text-button link-button" href="habits.html">Add habit</a>
+          </div>
+        </header>
+
+        <section class="dashboard-summary-console" data-dashboard-summary aria-label="Dashboard summary">
+          <div class="summary-plane" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="summary-core-zone">
+            <div class="summary-reactor" data-command-ring="overallProgress" aria-hidden="true">
+              <span class="reactor-ring outer"></span>
+              <span class="reactor-ring middle"></span>
+              <span class="reactor-core"></span>
+              <strong data-metric="overallProgress">0%</strong>
+            </div>
+            <div class="summary-core-copy">
+              <p class="eyebrow">Overall core</p>
+              <h2 data-metric="overallProgress">0%</h2>
+              <div class="progress-track"><span data-bar="overallProgress"></span></div>
+            </div>
+            <div class="summary-core-stack">
+              <span>Current level</span>
+              <strong data-profile-level>Level 1</strong>
+              <small data-profile-xp>0 XP</small>
+            </div>
+            <div class="summary-core-stack">
+              <span>Progress bank</span>
+              <strong data-metric="rewardProgress">0 XP earned</strong>
+              <small data-summary-reward-status>No XP yet</small>
+            </div>
+          </div>
+
+          <div class="summary-lanes">
+            <article class="summary-lane goals-lane" data-summary-goals>
+              <div class="summary-lane-visual checkpoint-visual" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Goals</p>
+                    <h2>Mission lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="#goals-section" data-dashboard-section-link>Go to goals</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>Active</span><strong data-metric="activeGoals">0</strong></div>
+                  <div class="summary-cell"><span>Achieved</span><strong data-metric="goalsAchieved">0 / 0</strong></div>
+                  <div class="summary-cell"><span>Due soon</span><strong data-metric="dueSoon">0</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Top priority</span>
+                    <strong data-summary-top-goal>No goals yet</strong>
+                    <small data-summary-goal-note>Waiting for your first goal</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="summary-lane habits-lane" data-summary-habits>
+              <div class="summary-lane-visual cadence-visual" data-command-grid="habitScore" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Habits</p>
+                    <h2>Cadence lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="#habits-section" data-dashboard-section-link>Go to habits</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>Habit score</span><strong data-metric="habitScore">0%</strong></div>
+                  <div class="summary-cell"><span>Done today</span><strong data-metric="checksCompleted">0</strong></div>
+                  <div class="summary-cell"><span>Best streak</span><strong data-metric="bestStreak">0 days</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Missed today</span>
+                    <strong data-metric="missedToday">0</strong>
+                    <small data-summary-habit-note>No habits yet</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="summary-lane rewards-lane" data-summary-rewards>
+              <div class="summary-lane-visual reward-crystal" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Rewards</p>
+                    <h2>Unlock lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="#rewards-section" data-dashboard-section-link>Go to rewards</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>XP</span><strong data-metric="weeklyXp">0</strong></div>
+                  <div class="summary-cell"><span>Next unlock</span><strong data-metric="nextUnlock">0%</strong></div>
+                  <div class="summary-cell"><span>Level</span><strong data-profile-level>Level 1</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Reward status</span>
+                    <strong data-summary-reward-status>No XP yet</strong>
+                    <small>Rewards editing comes later</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <div class="section-bridge goal-bridge" aria-hidden="true">
+          <span class="goal-path"></span>
+          <span class="goal-node node-one"></span>
+          <span class="goal-node node-two"></span>
+          <span class="goal-node node-three"></span>
+          <span class="goal-flag flag-one"></span>
+          <span class="goal-flag flag-two"></span>
+        </div>
+      </section>
+
+      <section class="scroll-section section-preview workspace-section" id="goals-section">
+        <header class="section-heading">
+          <div>
+            <p class="eyebrow">Goals</p>
+            <h2>Plan the mission before the sprint starts.</h2>
+          </div>
+          <a class="text-button link-button" href="goals.html">Full goals page</a>
+        </header>
+
+        <div class="workspace-grid main-workspace-grid goals-main-grid">
+          <div class="goals-left-stack">
+            <article class="panel command-panel in-page-console goal-mini-console">
+              <div class="panel-hologram input-hologram" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Add goal</p>
+                  <h2>Quick goal console</h2>
+                </div>
+              </div>
+
+              <form class="entry-form compact-goal-form" data-goal-form>
+                <label>
+                  Goal name
+                  <input name="title" type="text" placeholder="What do you want to achieve?" required>
+                </label>
+                <label>
+                  Area of life
+                  <select name="category" required>
+                    <option value="Health">Health</option>
+                    <option value="School">School</option>
+                    <option value="Money">Money</option>
+                    <option value="Friends">Friends</option>
+                    <option value="Hobbies">Hobbies</option>
+                    <option value="Home">Home</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Community">Community</option>
+                  </select>
+                </label>
+                <div class="form-field date-field" data-date-field>
+                  <label for="goal-deadline-home">Deadline</label>
+                  <button class="date-trigger" type="button" data-date-trigger aria-haspopup="dialog" aria-expanded="false" aria-describedby="goal-date-hint-home">
+                    <span class="date-value" data-date-value id="goal-date-hint-home">Pick a deadline</span>
+                    <span class="date-icon" aria-hidden="true"></span>
+                  </button>
+                  <input id="goal-deadline-home" name="deadline" type="hidden" data-date-input>
+                  <div class="date-popover" data-date-popover hidden role="dialog" aria-label="Choose deadline"></div>
+                </div>
+                <label class="full-width">
+                  Micro steps
+                  <textarea name="steps" rows="3" placeholder="Add one step per line"></textarea>
+                </label>
+                <div class="routine-link-planner full-width" data-routine-link-planner aria-live="polite"></div>
+                <button class="text-button" type="submit">Save goal</button>
+              </form>
+
+              <div class="save-guidance compact-guidance" data-save-status="goal" hidden aria-live="polite">
+                <div>
+                  <strong>Goal saved.</strong>
+                  <span>Your dashboard and mission queue are updated.</span>
+                </div>
+                <div class="guide-actions">
+                  <button class="ghost-button" type="button" data-add-another="goal">Add another</button>
+                  <a class="text-button link-button" href="#dashboard">Dashboard</a>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel command-panel in-page-console goal-signal-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Goal signal</p>
+                  <h2>Life area orbit</h2>
+                </div>
+              </div>
+              <div class="goal-signal-map" data-goal-signal-map aria-hidden="true"></div>
+            </article>
+          </div>
+
+          <article class="panel command-panel in-page-console category-workspace-panel">
+            <div class="panel-hologram balance-radar-visual" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Areas of life</p>
+                <h2>Customize balance</h2>
+              </div>
+            </div>
+            <form class="category-form" data-category-form>
+              <label>
+                Add area
+                <input name="categoryName" type="text" placeholder="Example: Coding, Fitness">
+              </label>
+              <button class="text-button" type="submit">Add area</button>
+            </form>
+            <p class="category-status" data-category-status aria-live="polite"></p>
+            <div class="category-list" data-category-list></div>
+          </article>
+        </div>
+
+        <article class="panel command-panel in-page-console mission-queue-panel homepage-queue-panel">
+          <div class="panel-hologram queue-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Mission queue</p>
+              <h2>Goals currently in motion</h2>
+            </div>
+          </div>
+          <div class="goal-list" data-goal-list="goals"></div>
+          <div class="empty-state" data-empty="goalsPage">
+            <strong>No goals added yet.</strong>
+            <span>Add your first goal above to activate this queue.</span>
+          </div>
+        </article>
+
+        <div class="section-bridge habit-bridge" aria-hidden="true">
+          <span class="habit-grid-signal"></span>
+          <span class="habit-check check-one"></span>
+          <span class="habit-check check-two"></span>
+          <span class="habit-check check-three"></span>
+          <span class="habit-pulse pulse-one"></span>
+          <span class="habit-pulse pulse-two"></span>
+        </div>
+      </section>
+
+      <section class="scroll-section section-preview workspace-section" id="habits-section">
+        <header class="section-heading">
+          <div>
+            <p class="eyebrow">Habits</p>
+            <h2>Track the daily signals that move the goal forward.</h2>
+          </div>
+          <div class="section-heading-actions">
+            <div class="today-readout" data-today-readout></div>
+            <a class="text-button link-button" href="habits.html">Full habits page</a>
+          </div>
+        </header>
+
+        <aside class="end-day-reminder" data-end-day-reminder hidden aria-live="polite"></aside>
+
+        <article class="panel command-panel in-page-console add-habit-panel habit-launch-panel homepage-habit-console">
+          <div class="panel-hologram habit-launch-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Add habit</p>
+              <h2>Build your daily tracker</h2>
+            </div>
+          </div>
+
+          <form class="entry-form habit-entry-form homepage-habit-form" data-habit-form>
+            <label>
+              Habit name
+              <input name="name" type="text" placeholder="Example: Read 20 pages" required>
+            </label>
+            <label class="category-field">
+              Category
+              <select name="category" aria-label="Habit category">
+                <option value="Health">Health</option>
+                <option value="School">School</option>
+                <option value="Hobbies">Hobbies</option>
+                <option value="Home">Home</option>
+                <option value="Friends">Friends</option>
+              </select>
+              <span class="category-picker" data-category-picker aria-label="Choose habit category"></span>
+              <small>Choose the life area this habit supports.</small>
+            </label>
+            <div class="form-actions">
+              <button class="text-button" type="submit">Save habit</button>
+            </div>
+          </form>
+
+          <div class="save-guidance compact-guidance" data-save-status="habit" hidden aria-live="polite">
+            <div>
+              <strong>Habit saved.</strong>
+              <span>Your daily checklist and dashboard score are updated.</span>
+            </div>
+            <div class="guide-actions">
+              <button class="ghost-button" type="button" data-add-another="habit">Add another</button>
+              <a class="text-button link-button" href="#dashboard">Dashboard</a>
+            </div>
+          </div>
+        </article>
+
+        <div class="workspace-grid main-workspace-grid habits-main-grid">
+          <article class="panel command-panel habit-panel weekly-overview-panel in-page-console">
+            <div class="panel-hologram habit-grid-hologram" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Daily overview</p>
+                <h2>Today and recent days</h2>
+              </div>
+            </div>
+            <div class="habit-table" aria-label="Daily habit checklist" data-habit-table></div>
+            <div class="empty-state" data-empty="habitsPage">
+              <strong>No habits added yet.</strong>
+              <span>Add your first habit above. Then check it off for today.</span>
+            </div>
+          </article>
+
+          <article class="panel command-panel in-page-console streak-command-panel homepage-streak-panel">
+            <div class="panel-hologram streak-hologram" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Momentum</p>
+                <h2>Streak readout</h2>
+              </div>
+            </div>
+            <div class="streak-list" data-streak-list></div>
+            <div class="empty-state compact" data-empty="streaks">
+              <strong>No streaks yet.</strong>
+              <span>Add habits and start checking today.</span>
+            </div>
+            <div class="reward-box">
+              <span>Best streak</span>
+              <strong data-metric="bestStreak">0 days</strong>
+            </div>
+            <div class="reward-box">
+              <span>Today</span>
+              <strong data-metric="weeklyChecks">0 / 0 habits done today</strong>
+            </div>
+          </article>
+        </div>
+
+        <div class="section-bridge reward-bridge" aria-hidden="true">
+          <span class="reward-vault"></span>
+          <span class="reward-beam beam-one"></span>
+          <span class="reward-beam beam-two"></span>
+          <span class="reward-gem gem-one"></span>
+          <span class="reward-gem gem-two"></span>
+          <span class="reward-gem gem-three"></span>
+        </div>
+      </section>
+
+      <section class="scroll-section section-preview workspace-section" id="rewards-section">
+        <header class="section-heading">
+          <div>
+            <p class="eyebrow">Rewards</p>
+            <h2>Connect effort to something worth earning.</h2>
+          </div>
+          <a class="text-button link-button" href="rewards.html">Full rewards page</a>
+        </header>
+
+        <div class="workspace-grid main-workspace-grid rewards-main-grid">
+          <article class="panel command-panel in-page-console reward-status-panel">
+            <div class="panel-hologram reward-mini-hologram" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Reward progress</p>
+                <h2>Current unlock status</h2>
+              </div>
+            </div>
+            <div class="reward-grid homepage-reward-grid">
+              <div class="reward-card unlocked">
+                <span class="reward-cost">XP bank</span>
+                <strong data-metric="rewardProgress">0 XP earned</strong>
+                <p>No XP yet</p>
+              </div>
+              <div class="reward-card">
+                <span class="reward-cost">Next unlock</span>
+                <strong data-metric="nextUnlock">0%</strong>
+                <div class="progress-track"><span data-bar="nextUnlock"></span></div>
+              </div>
+              <div class="reward-card">
+                <span class="reward-cost">Level</span>
+                <strong data-profile-level>Level 1</strong>
+                <p data-profile-xp>0 XP</p>
+              </div>
+              <div class="reward-card">
+                <span class="reward-cost">Reward shop</span>
+                <strong>No rewards set yet.</strong>
+                <p>Reward editing comes later.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel command-panel in-page-console reward-rules-panel">
+            <div class="panel-hologram weekly-hologram" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Reward rules</p>
+                <h2>What currently creates XP</h2>
+              </div>
+            </div>
+            <div class="rule-list">
+              <div class="rule-row"><strong>Goals added</strong><span data-metric="activeGoals">0</span></div>
+              <div class="rule-row"><strong>Goal steps finished</strong><span data-metric="stepsFinishedShort">0</span></div>
+              <div class="rule-row"><strong>Habits added</strong><span data-metric="habitCount">0</span></div>
+              <div class="rule-row"><strong>Habit checks complete</strong><span data-metric="checksCompleted">0</span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

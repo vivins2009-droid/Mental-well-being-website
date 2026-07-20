@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rewards | GoalLab</title>
+  <link rel="stylesheet" href="styles.css?v=habit-reflection-buttons">
+  <script src="app.js?v=habit-reflection-buttons" defer></script>
+</head>
+<body data-page="rewards">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <nav class="nav-list" aria-label="Main navigation">
+        <a class="nav-item" href="index.html#home">Home</a>
+        <a class="nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="nav-item" href="goals.html">Goals</a>
+        <a class="nav-item" href="habits.html">Habits</a>
+        <a class="nav-item active" href="rewards.html">Rewards</a>
+      </nav>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Rewards</p>
+          <h1>Make progress feel worth coming back to.</h1>
+        </div>
+        <div class="top-actions">
+          <a class="text-button link-button back-link" href="index.html#dashboard">Back to dashboard</a>
+        </div>
+      </header>
+
+      <section class="metric-grid" aria-label="Reward summary">
+        <article class="metric-card primary">
+          <span>Next unlock</span>
+          <strong data-metric="nextUnlock">0%</strong>
+          <div class="progress-track"><span data-bar="nextUnlock"></span></div>
+        </article>
+        <article class="metric-card">
+          <span>Rewards earned</span>
+          <strong>0</strong>
+          <p>Reward editing comes later</p>
+        </article>
+        <article class="metric-card">
+          <span>XP this week</span>
+          <strong data-metric="weeklyXp">0</strong>
+          <p>From goals and habits</p>
+        </article>
+        <article class="metric-card">
+          <span>Current level</span>
+          <strong data-profile-level>Level 1</strong>
+          <p data-profile-xp>0 XP</p>
+        </article>
+      </section>
+
+      <section class="workspace-grid rewards-layout">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Reward shop</p>
+              <h2>Coming later</h2>
+            </div>
+          </div>
+          <div class="empty-state">
+            <strong>No rewards set yet.</strong>
+            <span>We can design custom reward editing after the goal and habit flows feel right.</span>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Reward rules</p>
+              <h2>Current progress inputs</h2>
+            </div>
+          </div>
+          <div class="rule-list">
+            <div class="rule-row"><strong>Goals added</strong><span data-metric="activeGoals">0</span></div>
+            <div class="rule-row"><strong>Goal steps finished</strong><span data-metric="stepsFinishedShort">0</span></div>
+            <div class="rule-row"><strong>Habits added</strong><span data-metric="habitCount">0</span></div>
+            <div class="rule-row"><strong>Habit checks complete</strong><span data-metric="checksCompleted">0</span></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
