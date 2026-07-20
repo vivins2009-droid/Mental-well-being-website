@@ -23,14 +23,6 @@ The app starts with no fake goals or habits. Everything shown in the dashboard i
 - `habits.html` - Full habit-tracking page
 - `rewards.html` - Rewards and XP overview
 
-## How To Open
-
-Open `index.html` in a browser, or run a local server from the project folder and visit:
-
-```text
-http://localhost:4176/index.html
-```
-
 ## Current Status
 
 This is an early functional prototype. The main goal is to test the user flow, data logic, and visual direction before polishing the final interface.
