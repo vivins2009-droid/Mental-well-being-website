@@ -121,8 +121,8 @@ function setSyncStatus(message) {
   document.querySelectorAll("[data-sync-status]").forEach((element) => {
     element.textContent = message;
   });
-  document.querySelectorAll("[data-account-chip] small").forEach((element) => {
-    element.textContent = userEmail() || message;
+  document.querySelectorAll("[data-account-chip] .profile-menu-copy span").forEach((element) => {
+    element.textContent = userEmail() || "Signed in";
   });
 }
 
@@ -1589,8 +1589,8 @@ function ensureAuthScreen() {
       </div>
 
       <div class="auth-setup" data-auth-setup hidden>
-        <strong>Supabase setup needed</strong>
-        <span>Add your project URL and anon key in <code>supabase-config.js</code>, then run <code>supabase/schema.sql</code> in Supabase.</span>
+        <strong>Connect the backend to enable login</strong>
+        <span>This is a setup notice, not a website bug. Add your Supabase project URL and anon key in <code>supabase-config.js</code>, then run <code>supabase/schema.sql</code> in Supabase.</span>
       </div>
 
       <button class="auth-provider-button" type="button" data-auth-google>Continue with Google</button>
@@ -1717,23 +1717,57 @@ function renderAccountControls() {
       actions.append(chip);
     }
     chip.innerHTML = `
-      <div>
-        <span>${escapeHtml(authDisplayName())}</span>
-        <small>${escapeHtml(userEmail() || syncStatus)}</small>
+      <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
+        <span class="profile-head" aria-hidden="true"></span>
+        <span class="profile-shoulders" aria-hidden="true"></span>
+      </button>
+      <div class="profile-menu" data-profile-menu hidden>
+        <div class="profile-menu-copy">
+          <strong>${escapeHtml(authDisplayName())}</strong>
+          <span>${escapeHtml(userEmail() || "Signed in")}</span>
+          <em data-sync-status>${escapeHtml(syncStatus)}</em>
+        </div>
+        <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
       </div>
-      <em data-sync-status>${escapeHtml(syncStatus)}</em>
-      <button class="ghost-button" type="button" data-sign-out>Sign out</button>
     `;
+    const menuButton = chip.querySelector("[data-profile-menu-toggle]");
+    const menu = chip.querySelector("[data-profile-menu]");
+    menuButton?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = !menu.hidden;
+      menu.hidden = isOpen;
+      menuButton.setAttribute("aria-expanded", String(!isOpen));
+    });
     chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
-      if (supabaseClient) await supabaseClient.auth.signOut();
-      authSession = null;
-      currentUser = null;
-      applyState(createEmptyState());
-      render();
-      setAuthVisibility();
+      menu.hidden = true;
+      menuButton?.setAttribute("aria-expanded", "false");
+      openDeleteConfirm({
+        eyebrow: "Confirm logout",
+        title: "Log out?",
+        copy: "You will return to the login screen. Your latest saved tracker state will stay connected to this account.",
+        confirmLabel: "Log out",
+        onConfirm: async () => {
+          if (supabaseClient) await supabaseClient.auth.signOut();
+          authSession = null;
+          currentUser = null;
+          applyState(createEmptyState());
+          render();
+          setAuthVisibility();
+        }
+      });
     });
   });
 }
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest("[data-account-chip]")) return;
+  document.querySelectorAll("[data-profile-menu]").forEach((menu) => {
+    menu.hidden = true;
+  });
+  document.querySelectorAll("[data-profile-menu-toggle]").forEach((button) => {
+    button.setAttribute("aria-expanded", "false");
+  });
+});
 
 function renderEndOfDayReminders() {
   const key = todayKey();
