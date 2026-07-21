@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasks | Plan Well</title>
+  <link rel="stylesheet" href="styles.css?v=tasks-full-page">
+  <script src="app.js?v=tasks-full-page" defer></script>
+</head>
+<body data-page="tasks">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <nav class="nav-list" aria-label="Main navigation">
+        <a class="nav-item" href="index.html#home">Home</a>
+        <a class="nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="nav-item" href="goals.html">Goals</a>
+        <a class="nav-item" href="habits.html">Habits</a>
+        <a class="nav-item active" href="tasks.html">Tasks</a>
+        <a class="nav-item" href="rewards.html">Rewards</a>
+      </nav>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Task board</p>
+          <h1>Keep one-off work clear and separate.</h1>
+        </div>
+        <div class="top-actions">
+          <div class="today-readout" data-today-readout></div>
+          <a class="text-button link-button back-link" href="index.html#tasks-section">Back to dashboard</a>
+        </div>
+      </header>
+
+      <section class="metric-grid command-metric-grid task-command-deck" aria-label="Task summary">
+        <article class="metric-card primary command-card task-reactor-card">
+          <div class="metric-visual task-stack-visual task-page-stack-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Open tasks</span>
+            <strong data-metric="openTasks">0</strong>
+            <p>Loose ends still active</p>
+          </div>
+        </article>
+        <article class="metric-card command-card checkpoint-card">
+          <div class="metric-visual task-done-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Tasks finished</span>
+            <strong data-metric="tasksDone">0</strong>
+            <p>Small wins cleared</p>
+          </div>
+        </article>
+        <article class="metric-card command-card cadence-card">
+          <div class="metric-visual task-link-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Linked habits</span>
+            <strong data-metric="linkedTasks">0</strong>
+            <p>Tasks attached to routines</p>
+          </div>
+        </article>
+        <article class="metric-card command-card beacon-card">
+          <div class="metric-visual task-total-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Total tasks</span>
+            <strong data-metric="taskCount">0</strong>
+            <p>Everything on the board</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace-grid tasks-page-layout">
+        <article class="panel command-panel in-page-console task-console-panel task-full-console">
+          <div class="panel-hologram task-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Add task</p>
+              <h2>Task quick access</h2>
+            </div>
+          </div>
+          <p class="form-guidance">Add homework, chores, errands, or any one-off task.</p>
+          <form class="entry-form task-entry-form" data-task-form>
+            <p class="task-link-guidance full-width">Linking a task to a habit is optional. Use it only when the task belongs to a daily routine.</p>
+            <label>
+              Task title
+              <input name="title" type="text" placeholder="Example: Physics homework" required>
+            </label>
+            <label>
+              Link to habit
+              <select name="linkedHabitId" data-habit-link-select aria-label="Link task to habit">
+                <option value="">No linked habit</option>
+              </select>
+            </label>
+            <label class="full-width">
+              Optional details
+              <textarea name="subtext" rows="4" placeholder="Example: Finish worksheet 4 and revise forces."></textarea>
+            </label>
+            <button class="text-button" type="submit">Save task</button>
+          </form>
+        </article>
+
+        <article class="panel command-panel in-page-console task-list-panel task-full-list-panel">
+          <div class="panel-hologram task-board-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Task board</p>
+              <h2>All tasks</h2>
+            </div>
+          </div>
+          <div class="task-list" data-task-list></div>
+          <div class="empty-state" data-empty="tasks">
+            <strong>No tasks added yet.</strong>
+            <span>Add your first task above. It will also appear in the homepage task workspace.</span>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
