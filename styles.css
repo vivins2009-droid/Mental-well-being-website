@@ -6316,9 +6316,13 @@ select option:hover,
 }
 
 .account-chip {
-  position: relative;
+  position: fixed;
+  top: clamp(14px, 2.4vw, 24px);
+  right: clamp(14px, 2.4vw, 24px);
+  z-index: 90;
   display: grid;
   place-items: center;
+  pointer-events: auto;
 }
 
 .profile-button {
@@ -7391,12 +7395,6 @@ body.is-logged-out .app-shell {
   .end-day-reminder {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .profile-menu {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
   }
 
   .habit-entry-form,

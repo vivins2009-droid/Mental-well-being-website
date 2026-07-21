@@ -1704,57 +1704,58 @@ function setAuthStatus(message) {
 }
 
 function renderAccountControls() {
-  document.querySelectorAll(".top-actions").forEach((actions) => {
-    let chip = actions.querySelector("[data-account-chip]");
-    if (!currentUser) {
-      chip?.remove();
-      return;
-    }
-    if (!chip) {
-      chip = document.createElement("div");
-      chip.className = "account-chip";
-      chip.dataset.accountChip = "";
-      actions.append(chip);
-    }
-    chip.innerHTML = `
-      <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
-        <span class="profile-head" aria-hidden="true"></span>
-        <span class="profile-shoulders" aria-hidden="true"></span>
-      </button>
-      <div class="profile-menu" data-profile-menu hidden>
-        <div class="profile-menu-copy">
-          <strong>${escapeHtml(authDisplayName())}</strong>
-          <span>${escapeHtml(userEmail() || "Signed in")}</span>
-          <em data-sync-status>${escapeHtml(syncStatus)}</em>
-        </div>
-        <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
+  let chip = document.querySelector("[data-account-chip]");
+  if (!currentUser) {
+    chip?.remove();
+    return;
+  }
+
+  if (!chip) {
+    chip = document.createElement("div");
+    chip.className = "account-chip";
+    chip.dataset.accountChip = "";
+    document.body.append(chip);
+  }
+
+  chip.innerHTML = `
+    <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
+      <span class="profile-head" aria-hidden="true"></span>
+      <span class="profile-shoulders" aria-hidden="true"></span>
+    </button>
+    <div class="profile-menu" data-profile-menu hidden>
+      <div class="profile-menu-copy">
+        <strong>${escapeHtml(authDisplayName())}</strong>
+        <span>${escapeHtml(userEmail() || "Signed in")}</span>
+        <em data-sync-status>${escapeHtml(syncStatus)}</em>
       </div>
-    `;
-    const menuButton = chip.querySelector("[data-profile-menu-toggle]");
-    const menu = chip.querySelector("[data-profile-menu]");
-    menuButton?.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const isOpen = !menu.hidden;
-      menu.hidden = isOpen;
-      menuButton.setAttribute("aria-expanded", String(!isOpen));
-    });
-    chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
-      menu.hidden = true;
-      menuButton?.setAttribute("aria-expanded", "false");
-      openDeleteConfirm({
-        eyebrow: "Confirm logout",
-        title: "Log out?",
-        copy: "You will return to the login screen. Your latest saved tracker state will stay connected to this account.",
-        confirmLabel: "Log out",
-        onConfirm: async () => {
-          if (supabaseClient) await supabaseClient.auth.signOut();
-          authSession = null;
-          currentUser = null;
-          applyState(createEmptyState());
-          render();
-          setAuthVisibility();
-        }
-      });
+      <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
+    </div>
+  `;
+
+  const menuButton = chip.querySelector("[data-profile-menu-toggle]");
+  const menu = chip.querySelector("[data-profile-menu]");
+  menuButton?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = !menu.hidden;
+    menu.hidden = isOpen;
+    menuButton.setAttribute("aria-expanded", String(!isOpen));
+  });
+  chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
+    menu.hidden = true;
+    menuButton?.setAttribute("aria-expanded", "false");
+    openDeleteConfirm({
+      eyebrow: "Confirm logout",
+      title: "Log out?",
+      copy: "You will return to the login screen. Your latest saved tracker state will stay connected to this account.",
+      confirmLabel: "Log out",
+      onConfirm: async () => {
+        if (supabaseClient) await supabaseClient.auth.signOut();
+        authSession = null;
+        currentUser = null;
+        applyState(createEmptyState());
+        render();
+        setAuthVisibility();
+      }
     });
   });
 }
