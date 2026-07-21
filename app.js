@@ -1,5 +1,6 @@
 const STORAGE_KEY = "goallab-user-tracker-v1";
 const LOCAL_MIGRATION_KEY = `${STORAGE_KEY}-supabase-imported`;
+const LEGACY_IMPORT_KEY = `${STORAGE_KEY}-legacy-imported`;
 const SUPABASE_TABLE = "user_tracker_states";
 const DEFAULT_CATEGORIES = ["Health", "School", "Money", "Friends", "Hobbies", "Home", "Adventure", "Community"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -69,17 +70,29 @@ function stateHasUserData(snapshot) {
   );
 }
 
-function loadState() {
+function accountCacheKey(userId) {
+  return `${STORAGE_KEY}-account-${userId}`;
+}
+
+function readStoredState(key) {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const stored = JSON.parse(localStorage.getItem(key));
     return normalizeStateSnapshot(stored);
   } catch {
     return createEmptyState();
   }
 }
 
+function loadState(key = STORAGE_KEY) {
+  return readStoredState(key);
+}
+
+function writeStoredState(key, payload = currentStatePayload()) {
+  localStorage.setItem(key, JSON.stringify(payload));
+}
+
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStatePayload()));
+  writeStoredState(currentUser ? accountCacheKey(currentUser.id) : STORAGE_KEY);
   queueRemoteSave();
 }
 
@@ -177,32 +190,42 @@ async function bootstrapUserState(session) {
   }
 
   setSyncStatus("Loading account...");
-  const localSnapshot = loadState();
+  const accountCacheKeyName = accountCacheKey(currentUser.id);
+  const accountSnapshot = loadState(accountCacheKeyName);
+  const legacySnapshot = loadState(STORAGE_KEY);
   try {
     const remoteSnapshot = await loadRemoteState(currentUser.id);
     const importKey = migrationKeyForUser(currentUser.id);
+    const legacyImportAlreadyUsed = localStorage.getItem(LEGACY_IMPORT_KEY) === "1";
     const shouldImportLocal =
       !remoteSnapshot &&
-      stateHasUserData(localSnapshot) &&
+      !legacyImportAlreadyUsed &&
+      stateHasUserData(legacySnapshot) &&
       localStorage.getItem(importKey) !== "1";
 
     if (remoteSnapshot) {
       applyState(remoteSnapshot);
+      if (stateHasUserData(remoteSnapshot)) localStorage.setItem(LEGACY_IMPORT_KEY, "1");
       setSyncStatus("Loaded from account");
     } else if (shouldImportLocal) {
-      applyState(localSnapshot);
+      applyState(legacySnapshot);
       localStorage.setItem(importKey, "1");
+      localStorage.setItem(LEGACY_IMPORT_KEY, "1");
       await saveUserState();
       setSyncStatus("Imported local data");
+    } else if (stateHasUserData(accountSnapshot)) {
+      applyState(accountSnapshot);
+      await saveUserState();
+      setSyncStatus("Restored local account cache");
     } else {
       applyState(createEmptyState());
       await saveUserState();
       setSyncStatus("New account ready");
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStatePayload()));
+    writeStoredState(accountCacheKeyName);
   } catch (error) {
-    applyState(localSnapshot);
+    applyState(accountSnapshot);
     setSyncStatus("Using local cache - sync failed");
     console.error("Plan Well sync failed", error);
   }
