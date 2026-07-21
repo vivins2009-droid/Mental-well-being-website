@@ -4,6 +4,12 @@ Plan Well is a personal productivity and progress-tracking website designed for 
 
 The app starts with no fake goals or habits. Everything shown in the dashboard is based on what the user adds.
 
+## Live Website
+
+Visit the live version here:
+
+[Plan Well - Teen Goal and Habit Tracker](https://planwellforyourteenlife.netlify.app/)
+
 ## Features
 
 - 3D dashboard summary for goals, habits, and rewards
