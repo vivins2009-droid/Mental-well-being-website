@@ -27,10 +27,11 @@ function loadState() {
     return {
       goals: Array.isArray(stored?.goals) ? stored.goals.map(normalizeGoal) : [],
       habits: Array.isArray(stored?.habits) ? stored.habits.map(normalizeHabit) : [],
+      tasks: Array.isArray(stored?.tasks) ? stored.tasks.map(normalizeTask) : [],
       categories: storedHasCategories ? normalizeCategories(stored.categories, { allowEmpty: true }) : [...DEFAULT_CATEGORIES]
     };
   } catch {
-    return { goals: [], habits: [], categories: [...DEFAULT_CATEGORIES] };
+    return { goals: [], habits: [], tasks: [], categories: [...DEFAULT_CATEGORIES] };
   }
 }
 
@@ -129,6 +130,7 @@ function normalizeStep(step) {
     id: source.id || uid("step"),
     text: String(source.text || "").trim(),
     done: Boolean(source.done),
+    routineIdea: String(source.routineIdea || "").trim(),
     linkedHabitId: String(source.linkedHabitId || ""),
     linkedAt: String(source.linkedAt || ""),
     linkedHabitTarget: target
@@ -149,6 +151,18 @@ function normalizeHabit(habit) {
 
   migrateWeeklyChecks(normalized, checks);
   return normalized;
+}
+
+function normalizeTask(task) {
+  return {
+    id: task?.id || uid("task"),
+    title: String(task?.title || "").trim() || "Untitled task",
+    subtext: String(task?.subtext || "").trim(),
+    linkedHabitId: String(task?.linkedHabitId || ""),
+    done: Boolean(task?.done),
+    createdAt: String(task?.createdAt || new Date().toISOString()),
+    completedAt: String(task?.completedAt || "")
+  };
 }
 
 function normalizeHabitHistory(history) {
@@ -329,6 +343,10 @@ function daysLeft(deadline) {
 
 function totals() {
   const goalCount = state.goals.length;
+  const taskCount = state.tasks.length;
+  const tasksDone = state.tasks.filter((task) => task.done).length;
+  const linkedTasks = state.tasks.filter((task) => task.linkedHabitId && findHabitById(task.linkedHabitId)).length;
+  const openTasks = Math.max(0, taskCount - tasksDone);
   const goalProgressValues = state.goals.map(goalProgress);
   const achievedGoals = goalProgressValues.filter((progress) => progress === 100).length;
   const averageGoalProgress = goalCount
@@ -353,7 +371,7 @@ function totals() {
     .map((habit) => ({ name: habit.name, streak: habitStreak(habit) }))
     .sort((a, b) => b.streak - a.streak)[0] || { name: "No habits yet", streak: 0 };
   const strongestHabit = bestHabit.streak > 0 ? bestHabit.name : "None";
-  const xp = totalHabitCompletions * 10 + stepsDone * 40 + achievedGoals * 300;
+  const xp = totalHabitCompletions * 10 + stepsDone * 40 + achievedGoals * 300 + tasksDone * 15;
 
   return {
     achievedGoals,
@@ -368,6 +386,10 @@ function totals() {
     overallProgress,
     plannedChecks,
     stepsDone,
+    taskCount,
+    tasksDone,
+    linkedTasks,
+    openTasks,
     totalSteps,
     totalHabitCompletions,
     strongestHabit,
@@ -392,6 +414,10 @@ function syncMetrics() {
   setText('[data-metric="checksCompleted"]', data.checksDone);
   setText('[data-metric="missedToday"]', data.missedToday);
   setText('[data-metric="habitCount"]', data.habitCount);
+  setText('[data-metric="taskCount"]', data.taskCount);
+  setText('[data-metric="tasksDone"]', data.tasksDone);
+  setText('[data-metric="linkedTasks"]', data.linkedTasks);
+  setText('[data-metric="openTasks"]', data.openTasks);
   setText('[data-metric="bestStreak"]', `${data.bestHabit.streak} days`);
   setText('[data-metric="strongestHabit"]', data.strongestHabit);
   setText('[data-metric="strongestStreak"]', `${data.bestHabit.streak} day streak`);
@@ -418,12 +444,21 @@ function syncMetrics() {
 
 function syncDashboardSummary(data) {
   const topGoal = state.goals.find((goal) => goalProgress(goal) < 100) || state.goals[0];
+  const nextTask = state.tasks.find((task) => !task.done) || state.tasks[0];
   const unlockProgress = Math.min(100, Math.round((data.xp / 300) * 100));
 
   setText("[data-summary-top-goal]", topGoal ? topGoal.title : "No goals yet");
   setText("[data-summary-goal-note]", topGoal ? goalSummaryNote(topGoal) : "Waiting for your first goal");
   setText("[data-summary-habit-note]", data.habitCount ? `${data.checksDone} / ${data.plannedChecks} done today` : "No habits yet");
+  setText("[data-summary-next-task]", nextTask ? nextTask.title : "No tasks yet");
+  setText("[data-summary-task-note]", nextTask ? taskSummaryNote(nextTask) : "Add one-off work here");
   setText("[data-summary-reward-status]", data.xp ? `${unlockProgress}% toward next unlock` : "No XP yet");
+}
+
+function taskSummaryNote(task) {
+  if (task.done) return "Finished";
+  const habit = findHabitById(task.linkedHabitId);
+  return habit ? `Linked to ${habit.name}` : "Not linked to a habit";
 }
 
 function goalSummaryNote(goal) {
@@ -464,6 +499,32 @@ function makeHabit(name, category) {
     checks: [false, false, false, false, false, false, false],
     history: {}
   };
+}
+
+function makeTask(title, subtext, linkedHabitId = "") {
+  const habit = findHabitById(linkedHabitId);
+  return {
+    id: uid("task"),
+    title: String(title || "").trim() || "Untitled task",
+    subtext: String(subtext || "").trim(),
+    linkedHabitId: habit ? habit.id : "",
+    done: false,
+    createdAt: new Date().toISOString(),
+    completedAt: ""
+  };
+}
+
+function tasksForHabit(habitId) {
+  return state.tasks.filter((task) => task.linkedHabitId === habitId);
+}
+
+function taskHabitOptionsMarkup(selectedId = "") {
+  return `
+    <option value="">No linked habit</option>
+    ${state.habits.map((habit) => `
+      <option value="${escapeHtml(habit.id)}" ${habit.id === selectedId ? "selected" : ""}>${escapeHtml(habit.name)}</option>
+    `).join("")}
+  `;
 }
 
 function createHabitFromRoutine(stepText, category) {
@@ -628,6 +689,7 @@ function stepsMarkup(goal) {
             <input type="checkbox" data-step="${step.id}" ${step.done ? "checked" : ""}>
             <span>${escapeHtml(step.text)}</span>
           </label>
+          ${step.routineIdea ? `<div class="routine-idea-note"><span>Daily routine idea</span><strong>${escapeHtml(step.routineIdea)}</strong></div>` : ""}
           ${routineStepMarkup(goal, step)}
         </div>
       `).join("")}
@@ -645,14 +707,13 @@ function routineStepMarkup(goal, step) {
       <div class="routine-link-editor">
         <div>
           <strong>Routine link</strong>
-          <span>Connect this step to a daily habit, or create one from the step.</span>
+          <span>Choose an existing habit that supports this step.</span>
         </div>
         <select data-routine-picker="${step.id}" aria-label="Choose linked habit">
           ${habitOptionsMarkup(step.linkedHabitId)}
         </select>
         <div class="routine-link-actions">
           <button class="ghost-button" type="button" data-save-routine-link="${step.id}" ${state.habits.length ? "" : "disabled"}>Save link</button>
-          <button class="ghost-button" type="button" data-create-routine-link="${step.id}">Create habit</button>
           <button class="ghost-button" type="button" data-cancel-routine-link="${step.id}">Cancel</button>
         </div>
       </div>
@@ -662,8 +723,7 @@ function routineStepMarkup(goal, step) {
   if (!step.linkedHabitId) {
     return `
       <div class="routine-link-status is-unlinked">
-        <span>No daily routine linked</span>
-        <button class="ghost-button" type="button" data-start-routine-link="${step.id}">Link habit</button>
+        <span>Use habits separately when this needs repeated practice.</span>
       </div>
     `;
   }
@@ -673,8 +733,6 @@ function routineStepMarkup(goal, step) {
       <div class="routine-link-status is-missing">
         <span>Linked habit is missing</span>
         <div class="routine-link-actions">
-          <button class="ghost-button" type="button" data-start-routine-link="${step.id}">Relink</button>
-          <button class="ghost-button" type="button" data-create-routine-link="${step.id}">Create habit</button>
           <button class="ghost-button" type="button" data-unlink-routine="${step.id}">Unlink</button>
         </div>
       </div>
@@ -692,7 +750,6 @@ function routineStepMarkup(goal, step) {
       </div>
       <div class="routine-link-actions">
         <a class="ghost-button link-button" href="${habitLinkHref()}" data-routine-habit-link>Habits</a>
-        <button class="ghost-button" type="button" data-start-routine-link="${step.id}">Change</button>
         <button class="ghost-button" type="button" data-unlink-routine="${step.id}">Unlink</button>
       </div>
     </div>
@@ -958,6 +1015,80 @@ function renderCategoryManager() {
   });
 }
 
+function renderTaskHabitOptions() {
+  document.querySelectorAll("[data-habit-link-select]").forEach((select) => {
+    const previous = select.value;
+    select.innerHTML = taskHabitOptionsMarkup(previous);
+    select.value = findHabitById(previous) ? previous : "";
+  });
+}
+
+function renderTasks() {
+  document.querySelectorAll("[data-task-list]").forEach((list) => {
+    list.innerHTML = "";
+    state.tasks.forEach((task) => list.append(taskRow(task)));
+  });
+  renderTaskHabitOptions();
+  toggleEmpty("tasks", state.tasks.length === 0);
+}
+
+function taskRow(task) {
+  const row = document.createElement("div");
+  const habit = findHabitById(task.linkedHabitId);
+  row.className = `task-row ${task.done ? "is-done" : ""}`;
+  row.innerHTML = `
+    <div class="task-status-orb" aria-hidden="true">${task.done ? "✓" : ""}</div>
+    <div class="task-copy">
+      <strong>${escapeHtml(task.title)}</strong>
+      ${task.subtext ? `<p>${escapeHtml(task.subtext)}</p>` : ""}
+      <span>${habit ? `Linked habit: ${escapeHtml(habit.name)}` : "Not linked to a habit"}</span>
+    </div>
+    <div class="task-actions">
+      <button class="daily-done-button ${task.done ? "is-done" : ""}" type="button" data-toggle-task="${task.id}">
+        ${task.done ? "Mark open" : "Mark done"}
+      </button>
+      <button class="delete-button" type="button" data-delete-task="${task.id}">Delete</button>
+    </div>
+  `;
+  row.querySelector("[data-toggle-task]")?.addEventListener("click", () => {
+    const match = state.tasks.find((item) => item.id === task.id);
+    if (match) {
+      match.done = !match.done;
+      match.completedAt = match.done ? new Date().toISOString() : "";
+    }
+    saveAndRender();
+  });
+  row.querySelector("[data-delete-task]")?.addEventListener("click", () => {
+    openDeleteConfirm({
+      eyebrow: "Confirm delete",
+      title: "Delete task?",
+      copy: `This will delete "${task.title}" from your task board.`,
+      confirmLabel: "Delete task",
+      onConfirm: () => {
+        state.tasks = state.tasks.filter((item) => item.id !== task.id);
+        saveAndRender();
+      }
+    });
+  });
+  return row;
+}
+
+function linkedTaskMarkup(habit) {
+  const tasks = tasksForHabit(habit.id);
+  if (!tasks.length) return "";
+  return `
+    <div class="habit-linked-tasks">
+      <span>Linked tasks</span>
+      ${tasks.map((task) => `
+        <div class="habit-linked-task ${task.done ? "is-done" : ""}">
+          <strong>${escapeHtml(task.title)}</strong>
+          ${task.subtext ? `<p>${escapeHtml(task.subtext)}</p>` : ""}
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function categoryRemovalFallback(name) {
   return categoryList().find((category) => category !== name) || "Uncategorized";
 }
@@ -1158,6 +1289,7 @@ function dailyHabitRow(habit, key) {
     <div class="daily-habit-main">
       <strong>${escapeHtml(habit.name)}</strong>
       <span>${escapeHtml(habit.category || fallbackCategory())} | ${formatHabitDay(key)}</span>
+      ${linkedTaskMarkup(habit)}
     </div>
     <div class="daily-habit-actions">
       <button class="daily-done-button ${done ? "is-done" : ""}" type="button" data-toggle-habit="${habit.id}" aria-pressed="${done}">
@@ -1483,10 +1615,12 @@ function collectRoutinePlannerChoices(form) {
   const choices = rows.map((row, index) => {
     const mode = row.querySelector("[data-routine-mode]")?.value || "none";
     const habitId = row.querySelector("[data-routine-existing-habit]")?.value || "";
+    const routineIdea = row.querySelector("[data-routine-idea]")?.value || "";
     return {
       text: row.dataset.routineStepText || "",
       mode,
       habitId,
+      routineIdea,
       index
     };
   });
@@ -1510,27 +1644,24 @@ function renderRoutineLinkPlanner(form) {
     form._routineLinkChoices = [];
     planner.innerHTML = `
       <div class="routine-planner-empty">
-        <strong>Match micro steps to habits</strong>
-        <span>Add micro steps above, then choose which ones should become daily routines.</span>
+        <strong>Daily routine support</strong>
+        <span>Add micro steps above, then describe what daily routine could help you make progress.</span>
       </div>
     `;
     return;
   }
 
-  const category = String(new FormData(form).get("category") || fallbackCategory());
   const nextChoices = lines.map((line, index) => {
     const choice = routineChoiceForLine(form, line, index);
-    const mode = choice.mode === "link" && !state.habits.length ? "none" : choice.mode;
-    const habitId = findHabitById(choice.habitId) ? choice.habitId : (mode === "link" ? state.habits[0]?.id || "" : "");
-    return { text: line, mode, habitId, index };
+    return { text: line, routineIdea: choice.routineIdea || choice.habitIdea || "", index };
   });
   form._routineLinkChoices = nextChoices;
 
   planner.innerHTML = `
     <div class="routine-planner-heading">
       <div>
-        <strong>Match micro steps to habits</strong>
-        <span>Keep one-time steps separate, or turn repeated effort into a daily habit.</span>
+        <strong>Daily routine support</strong>
+        <span>Micro steps measure success. Habits describe what you can repeat in real life to get there.</span>
       </div>
       <small>${lines.length} step${lines.length === 1 ? "" : "s"} planned</small>
     </div>
@@ -1541,24 +1672,11 @@ function renderRoutineLinkPlanner(form) {
             <span>Step ${index + 1}</span>
             <strong>${escapeHtml(choice.text)}</strong>
           </div>
-          <label>
-            Routine link
-            <select data-routine-mode aria-label="Routine link for ${escapeHtml(choice.text)}">
-              <option value="none" ${choice.mode === "none" ? "selected" : ""}>No habit</option>
-              <option value="create" ${choice.mode === "create" ? "selected" : ""}>Create habit</option>
-              <option value="link" ${choice.mode === "link" ? "selected" : ""} ${state.habits.length ? "" : "disabled"}>Link existing habit</option>
-            </select>
+          <label class="routine-idea-field">
+            Daily routine idea
+            <textarea data-routine-idea rows="2" placeholder="Example: Practice English for 30 minutes after school.">${escapeHtml(choice.routineIdea)}</textarea>
           </label>
-          ${choice.mode === "link" ? `
-            <label>
-              Existing habit
-              <select data-routine-existing-habit aria-label="Existing habit for ${escapeHtml(choice.text)}">
-                ${habitOptionsMarkup(choice.habitId)}
-              </select>
-            </label>
-          ` : `
-            <p>${choice.mode === "create" ? `Will create a daily ${escapeHtml(category)} habit.` : "This stays a one-time micro step."}</p>
-          `}
+          <p>Optional. Add the actual routine in the habit tracker when you want it checked daily.</p>
         </div>
       `).join("")}
     </div>
@@ -1576,32 +1694,25 @@ function bindRoutinePlanner(form) {
 
   textarea?.addEventListener("input", () => renderRoutineLinkPlanner(form));
   categorySelect?.addEventListener("change", () => renderRoutineLinkPlanner(form));
-  planner?.addEventListener("change", () => {
+  planner?.addEventListener("input", (event) => {
     collectRoutinePlannerChoices(form);
+    if (event.target.matches("[data-routine-idea]")) return;
     renderRoutineLinkPlanner(form);
   });
+  planner?.addEventListener("change", () => collectRoutinePlannerChoices(form));
 }
 
 function stepsFromGoalForm(form, category) {
   const lines = microStepLines(form);
   const choices = collectRoutinePlannerChoices(form);
   return lines.map((text, index) => {
-    const choice = choices[index] || { mode: "none", habitId: "" };
-    const step = normalizeStep({ id: uid("step"), text, done: false, linkedHabitTarget: 7 });
-    if (choice.mode === "create") {
-      const habit = createHabitFromRoutine(text, category);
-      linkStepToHabit(step, habit.id);
-    } else if (choice.mode === "link") {
-      const habit = findHabitById(choice.habitId);
-      if (habit) linkStepToHabit(step, habit.id);
-    }
-    return step;
+    const choice = choices[index] || { routineIdea: "" };
+    return normalizeStep({ id: uid("step"), text, done: false, routineIdea: choice.routineIdea || "", linkedHabitTarget: 7 });
   });
 }
 
 function bindForms() {
-  const categoryForm = document.querySelector("[data-category-form]");
-  if (categoryForm) {
+  document.querySelectorAll("[data-category-form]").forEach((categoryForm) => {
     categoryForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const form = new FormData(categoryForm);
@@ -1609,7 +1720,7 @@ function bindForms() {
       categoryForm.reset();
       categoryForm.querySelector("input")?.focus();
     });
-  }
+  });
 
   document.querySelectorAll("[data-goal-form]").forEach((goalForm) => {
     bindRoutinePlanner(goalForm);
@@ -1638,8 +1749,7 @@ function bindForms() {
     });
   });
 
-  const habitForm = document.querySelector("[data-habit-form]");
-  if (habitForm) {
+  document.querySelectorAll("[data-habit-form]").forEach((habitForm) => {
     habitForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const form = new FormData(habitForm);
@@ -1650,7 +1760,18 @@ function bindForms() {
       saveAndRender();
       showSaveStatus("habit");
     });
-  }
+  });
+
+  document.querySelectorAll("[data-task-form]").forEach((taskForm) => {
+    taskForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const form = new FormData(taskForm);
+      state.tasks.push(makeTask(form.get("title"), form.get("subtext"), form.get("linkedHabitId")));
+      taskForm.reset();
+      saveAndRender();
+      taskForm.querySelector("input, textarea, select")?.focus();
+    });
+  });
 }
 
 function saveAndRender() {
@@ -1665,6 +1786,7 @@ function render() {
   renderRoutineLinkPlanners();
   renderGoals();
   renderCategories();
+  renderTasks();
   renderHabits();
 }
 

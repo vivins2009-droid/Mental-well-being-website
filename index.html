@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plan well | Teen Progress Tracker</title>
-  <link rel="stylesheet" href="styles.css?v=habit-reflection-buttons">
-  <script src="app.js?v=habit-reflection-buttons" defer></script>
+  <link rel="stylesheet" href="styles.css?v=tasks-routine-support">
+  <script src="app.js?v=tasks-routine-support" defer></script>
 </head>
 <body data-page="dashboard">
   <div class="app-shell">
@@ -15,6 +15,7 @@
         <a class="nav-item" href="#dashboard">Dashboard</a>
         <a class="nav-item" href="#goals-section">Goals</a>
         <a class="nav-item" href="#habits-section">Habits</a>
+        <a class="nav-item" href="#tasks-section">Tasks</a>
         <a class="nav-item" href="#rewards-section">Rewards</a>
       </nav>
     </aside>
@@ -150,6 +151,33 @@
                     <span>Missed today</span>
                     <strong data-metric="missedToday">0</strong>
                     <small data-summary-habit-note>No habits yet</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="summary-lane tasks-lane" data-summary-tasks>
+              <div class="summary-lane-visual task-stack-visual" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Tasks</p>
+                    <h2>Action lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="#tasks-section" data-dashboard-section-link>Go to tasks</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>Open tasks</span><strong data-metric="openTasks">0</strong></div>
+                  <div class="summary-cell"><span>Done</span><strong data-metric="tasksDone">0</strong></div>
+                  <div class="summary-cell"><span>Linked habits</span><strong data-metric="linkedTasks">0</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Next task</span>
+                    <strong data-summary-next-task>No tasks yet</strong>
+                    <small data-summary-task-note>Add one-off work here</small>
                   </div>
                 </div>
               </div>
@@ -439,6 +467,77 @@
         </div>
 
         <div class="section-bridge reward-bridge" aria-hidden="true">
+          <span class="task-stack-bridge"></span>
+          <span class="task-card card-one"></span>
+          <span class="task-card card-two"></span>
+          <span class="task-card card-three"></span>
+        </div>
+      </section>
+
+      <section class="scroll-section section-preview workspace-section" id="tasks-section">
+        <header class="section-heading">
+          <div>
+            <p class="eyebrow">Tasks</p>
+            <h2>Capture one-off work without turning everything into a habit.</h2>
+          </div>
+          <div class="section-heading-actions">
+            <div class="today-readout" data-today-readout></div>
+          </div>
+        </header>
+
+        <div class="workspace-grid main-workspace-grid tasks-main-grid">
+          <article class="panel command-panel in-page-console task-console-panel">
+            <div class="panel-hologram task-hologram" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Add task</p>
+                <h2>Quick to-do console</h2>
+              </div>
+            </div>
+            <form class="entry-form task-entry-form" data-task-form>
+              <label>
+                Task title
+                <input name="title" type="text" placeholder="Example: Physics homework" required>
+              </label>
+              <label>
+                Optional details
+                <textarea name="subtext" rows="3" placeholder="Example: Finish worksheet 4 and revise forces."></textarea>
+              </label>
+              <label>
+                Link to habit
+                <select name="linkedHabitId" data-habit-link-select aria-label="Link task to habit">
+                  <option value="">No linked habit</option>
+                </select>
+                <small>Use this only when a task belongs to a routine, like homework inside a daily study habit.</small>
+              </label>
+              <button class="text-button" type="submit">Save task</button>
+            </form>
+          </article>
+
+          <article class="panel command-panel in-page-console task-list-panel">
+            <div class="panel-hologram task-board-hologram" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Task board</p>
+                <h2>Today’s loose ends</h2>
+              </div>
+            </div>
+            <div class="task-list" data-task-list></div>
+            <div class="empty-state" data-empty="tasks">
+              <strong>No tasks added yet.</strong>
+              <span>Add homework, chores, errands, or anything that should not become a full goal.</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="section-bridge reward-bridge" aria-hidden="true">
           <span class="reward-vault"></span>
           <span class="reward-beam beam-one"></span>
           <span class="reward-beam beam-two"></span>
@@ -511,6 +610,7 @@
               <div class="rule-row"><strong>Goal steps finished</strong><span data-metric="stepsFinishedShort">0</span></div>
               <div class="rule-row"><strong>Habits added</strong><span data-metric="habitCount">0</span></div>
               <div class="rule-row"><strong>Habit checks complete</strong><span data-metric="checksCompleted">0</span></div>
+              <div class="rule-row"><strong>Tasks finished</strong><span data-metric="tasksDone">0</span></div>
             </div>
           </article>
         </div>
