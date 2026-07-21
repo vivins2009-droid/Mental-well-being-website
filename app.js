@@ -1,4 +1,6 @@
 const STORAGE_KEY = "goallab-user-tracker-v1";
+const LOCAL_MIGRATION_KEY = `${STORAGE_KEY}-supabase-imported`;
+const SUPABASE_TABLE = "user_tracker_states";
 const DEFAULT_CATEGORIES = ["Health", "School", "Money", "Friends", "Hobbies", "Home", "Adventure", "Community"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -12,31 +14,226 @@ let pendingCategoryRemoval = "";
 let pendingDeleteAction = null;
 let editingRoutineLinkKey = "";
 let openReflectionKey = "";
+let supabaseClient = null;
+let authSession = null;
+let currentUser = null;
+let syncStatus = "Checking account...";
+let syncTimer = 0;
+let authInitialized = false;
 
 if (new URLSearchParams(window.location.search).get("reset") === "1") {
   localStorage.removeItem(STORAGE_KEY);
   window.history.replaceState({}, "", window.location.pathname);
 }
 
-const state = loadState();
+const state = createEmptyState();
+
+function createEmptyState() {
+  return { goals: [], habits: [], tasks: [], categories: [...DEFAULT_CATEGORIES] };
+}
+
+function normalizeStateSnapshot(raw) {
+  const storedHasCategories = Object.prototype.hasOwnProperty.call(raw || {}, "categories");
+  return {
+    goals: Array.isArray(raw?.goals) ? raw.goals.map(normalizeGoal) : [],
+    habits: Array.isArray(raw?.habits) ? raw.habits.map(normalizeHabit) : [],
+    tasks: Array.isArray(raw?.tasks) ? raw.tasks.map(normalizeTask) : [],
+    categories: storedHasCategories ? normalizeCategories(raw.categories, { allowEmpty: true }) : [...DEFAULT_CATEGORIES]
+  };
+}
+
+function currentStatePayload() {
+  return {
+    goals: state.goals,
+    habits: state.habits,
+    tasks: state.tasks,
+    categories: state.categories
+  };
+}
+
+function applyState(nextState) {
+  const normalized = normalizeStateSnapshot(nextState);
+  state.goals = normalized.goals;
+  state.habits = normalized.habits;
+  state.tasks = normalized.tasks;
+  state.categories = normalized.categories;
+}
+
+function stateHasUserData(snapshot) {
+  const normalized = normalizeStateSnapshot(snapshot);
+  return Boolean(
+    normalized.goals.length ||
+    normalized.habits.length ||
+    normalized.tasks.length ||
+    Object.prototype.hasOwnProperty.call(snapshot || {}, "categories")
+  );
+}
 
 function loadState() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    const storedHasCategories = Object.prototype.hasOwnProperty.call(stored || {}, "categories");
-    return {
-      goals: Array.isArray(stored?.goals) ? stored.goals.map(normalizeGoal) : [],
-      habits: Array.isArray(stored?.habits) ? stored.habits.map(normalizeHabit) : [],
-      tasks: Array.isArray(stored?.tasks) ? stored.tasks.map(normalizeTask) : [],
-      categories: storedHasCategories ? normalizeCategories(stored.categories, { allowEmpty: true }) : [...DEFAULT_CATEGORIES]
-    };
+    return normalizeStateSnapshot(stored);
   } catch {
-    return { goals: [], habits: [], tasks: [], categories: [...DEFAULT_CATEGORIES] };
+    return createEmptyState();
   }
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStatePayload()));
+  queueRemoteSave();
+}
+
+function supabaseSettings() {
+  const settings = window.PLANWELL_SUPABASE || {};
+  const url = String(settings.url || "").trim();
+  const anonKey = String(settings.anonKey || "").trim();
+  const configured =
+    url.startsWith("https://") &&
+    anonKey.length > 20 &&
+    !url.includes("PASTE_") &&
+    !anonKey.includes("PASTE_");
+  return { url, anonKey, configured };
+}
+
+function initSupabaseClient() {
+  const settings = supabaseSettings();
+  if (!settings.configured || !window.supabase?.createClient) {
+    supabaseClient = null;
+    syncStatus = settings.configured ? "Auth library unavailable" : "Supabase setup needed";
+    return false;
+  }
+  supabaseClient = window.supabase.createClient(settings.url, settings.anonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
+  return true;
+}
+
+function migrationKeyForUser(userId) {
+  return `${LOCAL_MIGRATION_KEY}-${userId}`;
+}
+
+function setSyncStatus(message) {
+  syncStatus = message;
+  document.querySelectorAll("[data-sync-status]").forEach((element) => {
+    element.textContent = message;
+  });
+  document.querySelectorAll("[data-account-chip] small").forEach((element) => {
+    element.textContent = userEmail() || message;
+  });
+}
+
+function queueRemoteSave() {
+  if (!authInitialized || !currentUser || !supabaseClient) return;
+  window.clearTimeout(syncTimer);
+  setSyncStatus("Saving...");
+  syncTimer = window.setTimeout(() => {
+    void saveUserState();
+  }, 350);
+}
+
+async function loadRemoteState(userId) {
+  if (!supabaseClient || !userId) return null;
+  const { data, error } = await supabaseClient
+    .from(SUPABASE_TABLE)
+    .select("data")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error && error.code !== "PGRST116") throw error;
+  return data?.data || null;
+}
+
+async function saveUserState() {
+  if (!supabaseClient || !currentUser) return;
+  const payload = currentStatePayload();
+  const { error } = await supabaseClient
+    .from(SUPABASE_TABLE)
+    .upsert({
+      user_id: currentUser.id,
+      data: payload,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+
+  if (error) {
+    setSyncStatus("Saved locally - sync failed");
+    return;
+  }
+  setSyncStatus("Saved to account");
+}
+
+async function bootstrapUserState(session) {
+  authSession = session;
+  currentUser = session?.user || null;
+  window.clearTimeout(syncTimer);
+
+  if (!currentUser) {
+    applyState(createEmptyState());
+    setSyncStatus("Signed out");
+    return;
+  }
+
+  setSyncStatus("Loading account...");
+  const localSnapshot = loadState();
+  try {
+    const remoteSnapshot = await loadRemoteState(currentUser.id);
+    const importKey = migrationKeyForUser(currentUser.id);
+    const shouldImportLocal =
+      !remoteSnapshot &&
+      stateHasUserData(localSnapshot) &&
+      localStorage.getItem(importKey) !== "1";
+
+    if (remoteSnapshot) {
+      applyState(remoteSnapshot);
+      setSyncStatus("Loaded from account");
+    } else if (shouldImportLocal) {
+      applyState(localSnapshot);
+      localStorage.setItem(importKey, "1");
+      await saveUserState();
+      setSyncStatus("Imported local data");
+    } else {
+      applyState(createEmptyState());
+      await saveUserState();
+      setSyncStatus("New account ready");
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStatePayload()));
+  } catch (error) {
+    applyState(localSnapshot);
+    setSyncStatus("Using local cache - sync failed");
+    console.error("Plan Well sync failed", error);
+  }
+}
+
+function authDisplayName() {
+  const meta = currentUser?.user_metadata || {};
+  return meta.full_name || meta.name || currentUser?.email || "Account";
+}
+
+function userEmail() {
+  return currentUser?.email || currentUser?.user_metadata?.email || "";
+}
+
+function setAuthVisibility() {
+  const isConfigured = Boolean(supabaseClient);
+  document.body.classList.toggle("is-authenticated", Boolean(currentUser));
+  document.body.classList.toggle("is-logged-out", !currentUser);
+  document.body.classList.toggle("is-auth-unconfigured", !isConfigured);
+  document.body.classList.remove("is-auth-loading");
+
+  const authScreen = document.querySelector("[data-auth-screen]");
+  if (authScreen) {
+    authScreen.hidden = Boolean(currentUser);
+    authScreen.querySelector("[data-auth-setup]").hidden = isConfigured;
+    authScreen.querySelectorAll("[data-auth-google], [data-auth-submit], [data-auth-magic]").forEach((control) => {
+      control.disabled = !isConfigured;
+    });
+  }
+
+  renderAccountControls();
 }
 
 function startOfLocalDay(date = new Date()) {
@@ -1360,7 +1557,181 @@ function renderStreaks() {
 
 function renderTodayReadouts() {
   document.querySelectorAll("[data-today-readout]").forEach((readout) => {
-    readout.innerHTML = `<span>Today</span><strong>${formatTodayReadout()}</strong>`;
+    readout.innerHTML = `<span>Today</span><strong>${formatTodayReadout()}</strong><small>${formatCurrentTimeReadout()}</small>`;
+  });
+}
+
+function formatCurrentTimeReadout() {
+  return new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+function ensureAuthScreen() {
+  if (document.querySelector("[data-auth-screen]")) return;
+  const screen = document.createElement("section");
+  screen.className = "auth-screen";
+  screen.dataset.authScreen = "";
+  screen.innerHTML = `
+    <div class="auth-hud" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <article class="auth-card">
+      <div class="auth-copy">
+        <p class="eyebrow">Plan well</p>
+        <h1>Your progress, saved to your account.</h1>
+        <p>Log in or sign up to keep goals, habits, tasks, categories, reflections, and XP connected to you across devices.</p>
+      </div>
+
+      <div class="auth-tabs" role="tablist" aria-label="Account mode">
+        <button class="auth-tab is-active" type="button" data-auth-mode="login">Login</button>
+        <button class="auth-tab" type="button" data-auth-mode="signup">Sign up</button>
+      </div>
+
+      <div class="auth-setup" data-auth-setup hidden>
+        <strong>Supabase setup needed</strong>
+        <span>Add your project URL and anon key in <code>supabase-config.js</code>, then run <code>supabase/schema.sql</code> in Supabase.</span>
+      </div>
+
+      <button class="auth-provider-button" type="button" data-auth-google>Continue with Google</button>
+
+      <form class="auth-form" data-auth-email-form>
+        <label>
+          Email
+          <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" autocomplete="current-password" placeholder="Minimum 6 characters">
+        </label>
+        <div class="auth-actions">
+          <button class="text-button" type="submit" data-auth-submit>Login with email</button>
+          <button class="ghost-button" type="button" data-auth-magic>Send magic link</button>
+        </div>
+      </form>
+
+      <p class="auth-status" data-auth-status aria-live="polite"></p>
+    </article>
+  `;
+  document.body.prepend(screen);
+}
+
+function bindAuthControls() {
+  const screen = document.querySelector("[data-auth-screen]");
+  if (!screen || screen.dataset.bound === "1") return;
+  screen.dataset.bound = "1";
+  let mode = "login";
+
+  const setMode = (nextMode) => {
+    mode = nextMode;
+    screen.querySelectorAll("[data-auth-mode]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.authMode === mode);
+    });
+    const submit = screen.querySelector("[data-auth-submit]");
+    const password = screen.querySelector('input[name="password"]');
+    if (submit) submit.textContent = mode === "signup" ? "Create account" : "Login with email";
+    if (password) password.autocomplete = mode === "signup" ? "new-password" : "current-password";
+    setAuthStatus("");
+  };
+
+  screen.querySelectorAll("[data-auth-mode]").forEach((button) => {
+    button.addEventListener("click", () => setMode(button.dataset.authMode));
+  });
+
+  screen.querySelector("[data-auth-google]")?.addEventListener("click", async () => {
+    if (!supabaseClient) {
+      setAuthStatus("Supabase is not configured yet.");
+      return;
+    }
+    setAuthStatus("Opening Google...");
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.href.split("#")[0] }
+    });
+    if (error) setAuthStatus(error.message);
+  });
+
+  screen.querySelector("[data-auth-email-form]")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!supabaseClient) {
+      setAuthStatus("Supabase is not configured yet.");
+      return;
+    }
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") || "").trim();
+    const password = String(form.get("password") || "");
+    if (!email || !password) {
+      setAuthStatus("Enter an email and password.");
+      return;
+    }
+
+    setAuthStatus(mode === "signup" ? "Creating account..." : "Logging in...");
+    const response = mode === "signup"
+      ? await supabaseClient.auth.signUp({ email, password })
+      : await supabaseClient.auth.signInWithPassword({ email, password });
+    if (response.error) {
+      setAuthStatus(response.error.message);
+      return;
+    }
+    setAuthStatus(mode === "signup" ? "Account created. Check your email if confirmation is enabled." : "Logged in.");
+  });
+
+  screen.querySelector("[data-auth-magic]")?.addEventListener("click", async () => {
+    if (!supabaseClient) {
+      setAuthStatus("Supabase is not configured yet.");
+      return;
+    }
+    const email = String(screen.querySelector('input[name="email"]')?.value || "").trim();
+    if (!email) {
+      setAuthStatus("Enter your email first.");
+      return;
+    }
+    setAuthStatus("Sending magic link...");
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href.split("#")[0] }
+    });
+    setAuthStatus(error ? error.message : "Magic link sent. Check your email.");
+  });
+
+  setMode("login");
+}
+
+function setAuthStatus(message) {
+  document.querySelectorAll("[data-auth-status]").forEach((status) => {
+    status.textContent = message;
+  });
+}
+
+function renderAccountControls() {
+  document.querySelectorAll(".top-actions").forEach((actions) => {
+    let chip = actions.querySelector("[data-account-chip]");
+    if (!currentUser) {
+      chip?.remove();
+      return;
+    }
+    if (!chip) {
+      chip = document.createElement("div");
+      chip.className = "account-chip";
+      chip.dataset.accountChip = "";
+      actions.append(chip);
+    }
+    chip.innerHTML = `
+      <div>
+        <span>${escapeHtml(authDisplayName())}</span>
+        <small>${escapeHtml(userEmail() || syncStatus)}</small>
+      </div>
+      <em data-sync-status>${escapeHtml(syncStatus)}</em>
+      <button class="ghost-button" type="button" data-sign-out>Sign out</button>
+    `;
+    chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      authSession = null;
+      currentUser = null;
+      applyState(createEmptyState());
+      render();
+      setAuthVisibility();
+    });
   });
 }
 
@@ -1987,12 +2358,47 @@ function bindScrollNav() {
   updateActive();
 }
 
-runPageArrival();
-bindForms();
-bindDateHints();
-bindSaveGuidance();
-bindDashboardSectionLinks();
-bindLinkMotion();
-bindButtonMotion();
-bindScrollNav();
-render();
+async function initializeApp() {
+  document.body.classList.add("is-auth-loading");
+  ensureAuthScreen();
+  bindAuthControls();
+  runPageArrival();
+  bindForms();
+  bindDateHints();
+  bindSaveGuidance();
+  bindDashboardSectionLinks();
+  bindLinkMotion();
+  bindButtonMotion();
+  bindScrollNav();
+  initSupabaseClient();
+
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      await bootstrapUserState(data.session);
+      supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (!authInitialized && event === "INITIAL_SESSION") return;
+        await bootstrapUserState(session);
+        render();
+        setAuthVisibility();
+      });
+    } catch (error) {
+      applyState(loadState());
+      setSyncStatus("Using local cache - auth failed");
+      console.error("Plan Well auth failed", error);
+    }
+  } else {
+    applyState(createEmptyState());
+  }
+
+  authInitialized = true;
+  render();
+  setAuthVisibility();
+  window.setInterval(() => {
+    renderTodayReadouts();
+    renderEndOfDayReminders();
+  }, 60000);
+}
+
+void initializeApp();
