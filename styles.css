@@ -2164,12 +2164,26 @@ select option:hover,
 }
 
 .micro-step-item {
+  position: relative;
   display: grid;
-  gap: 8px;
-  padding: 9px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
   border: 1px solid rgba(0, 246, 255, 0.13);
   border-radius: 12px;
   background: rgba(0, 246, 255, 0.035);
+}
+
+.micro-step-item::before {
+  position: absolute;
+  top: -9px;
+  bottom: -9px;
+  left: 31px;
+  width: 1px;
+  content: "";
+  background: linear-gradient(rgba(0, 246, 255, 0), rgba(0, 246, 255, 0.36), rgba(0, 246, 255, 0));
+  opacity: 0.55;
 }
 
 .micro-step-item.is-complete {
@@ -2177,10 +2191,38 @@ select option:hover,
   background: rgba(0, 255, 208, 0.055);
 }
 
+.micro-step-item.is-active-step {
+  border-color: rgba(0, 255, 208, 0.46);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0, 255, 208, 0.14), transparent 8rem),
+    rgba(0, 246, 255, 0.055);
+  box-shadow:
+    0 0 24px rgba(0, 255, 208, 0.12),
+    inset 0 0 18px rgba(0, 255, 208, 0.08);
+}
+
+.micro-step-index {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 38px;
+  place-items: center;
+  border: 1px solid rgba(0, 246, 255, 0.24);
+  border-radius: 11px;
+  background:
+    linear-gradient(145deg, rgba(0, 246, 255, 0.18), rgba(0, 136, 255, 0.12)),
+    rgba(0, 246, 255, 0.08);
+  color: var(--mint);
+  font-size: 0.78rem;
+  font-weight: 900;
+  box-shadow: inset 0 0 12px rgba(0, 246, 255, 0.1);
+}
+
 .step-check {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   color: var(--text);
   font-size: 0.9rem;
 }
@@ -2190,7 +2232,145 @@ select option:hover,
 }
 
 .step-check input {
+  flex: 0 0 auto;
   accent-color: var(--mint);
+}
+
+.active-step-pill {
+  justify-self: end;
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 255, 208, 0.38);
+  border-radius: 999px;
+  background: rgba(0, 255, 208, 0.11);
+  color: var(--mint);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.routine-idea-note {
+  grid-column: 2 / -1;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid rgba(0, 246, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(0, 246, 255, 0.04);
+}
+
+.routine-idea-note span {
+  color: var(--mint);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.routine-idea-note strong {
+  color: var(--text);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.micro-step-source-field {
+  display: none !important;
+}
+
+.micro-step-builder {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(0, 246, 255, 0.2);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0, 255, 208, 0.12), transparent 8rem),
+    linear-gradient(145deg, rgba(0, 246, 255, 0.075), rgba(0, 18, 28, 0.52));
+  box-shadow:
+    inset 0 0 20px rgba(0, 246, 255, 0.055),
+    0 16px 30px rgba(0, 0, 0, 0.2);
+}
+
+.micro-step-builder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.micro-step-builder-head .ghost-button,
+.micro-step-builder-row .ghost-button {
+  grid-column: auto;
+}
+
+.micro-step-builder-head strong {
+  display: block;
+  color: var(--mint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.micro-step-builder-head span {
+  display: block;
+  margin-top: 3px;
+  color: rgba(188, 236, 242, 0.68);
+  font-size: 0.8rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.micro-step-builder-list {
+  display: grid;
+  gap: 10px;
+}
+
+.micro-step-builder-row {
+  display: grid;
+  grid-template-columns: 46px minmax(180px, 0.78fr) minmax(240px, 1.22fr) auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(0, 246, 255, 0.16);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(0, 246, 255, 0.06), rgba(0, 18, 28, 0.56)),
+    rgba(0, 246, 255, 0.035);
+}
+
+.micro-step-builder-index {
+  display: grid;
+  min-height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(0, 246, 255, 0.2), rgba(0, 136, 255, 0.14)),
+    rgba(0, 246, 255, 0.08);
+  color: var(--mint);
+  font-weight: 900;
+  box-shadow: inset 0 0 14px rgba(0, 246, 255, 0.12);
+}
+
+.micro-step-builder-row label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.micro-step-builder-row textarea {
+  min-height: 58px;
+}
+
+.micro-step-remove {
+  min-width: 88px;
+  min-height: 44px;
+  border-radius: 12px;
 }
 
 .routine-link-planner {
@@ -2333,6 +2513,7 @@ select option:hover,
 
 .routine-link-status,
 .routine-link-editor {
+  grid-column: 2 / -1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2363,6 +2544,8 @@ select option:hover,
   margin-top: 2px;
   color: var(--text);
   font-size: 0.82rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .routine-link-editor {
@@ -6508,12 +6691,84 @@ body.is-logged-out .app-shell {
 
 .habit-entry-form,
 .homepage-habit-form {
-  grid-template-columns: minmax(240px, 1.05fr) minmax(320px, 1.45fr) auto;
+  grid-template-columns: minmax(220px, 0.86fr) minmax(260px, 1fr) minmax(300px, 1.14fr);
   align-items: end;
 }
 
 .habit-entry-form .form-actions {
+  grid-column: 3;
   align-self: end;
+}
+
+.weekday-field,
+.goal-support-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.weekday-field-head {
+  display: grid;
+  gap: 3px;
+}
+
+.weekday-field-head strong {
+  color: var(--muted);
+}
+
+.weekday-field-head small,
+.goal-support-field small {
+  color: rgba(188, 236, 242, 0.68);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.weekday-picker {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(42px, 1fr));
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid rgba(0, 246, 255, 0.18);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(0, 255, 208, 0.14), transparent 4rem),
+    rgba(0, 246, 255, 0.035);
+  box-shadow: inset 0 0 14px rgba(0, 246, 255, 0.08);
+}
+
+.weekday-choice {
+  display: grid;
+  grid-column: auto;
+  min-height: 34px;
+  place-items: center;
+  border: 1px solid rgba(0, 246, 255, 0.24);
+  border-radius: 10px;
+  background: rgba(0, 246, 255, 0.055);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.weekday-choice:hover,
+.weekday-choice.is-selected {
+  border-color: rgba(0, 255, 208, 0.66);
+  background:
+    linear-gradient(145deg, rgba(0, 246, 255, 0.22), rgba(0, 255, 208, 0.12)),
+    rgba(0, 246, 255, 0.08);
+  color: var(--text);
+  box-shadow: 0 0 18px rgba(0, 255, 208, 0.18);
+  transform: translateY(-1px) translateZ(8px);
+}
+
+.goal-support-field {
+  grid-column: 1 / span 2;
 }
 
 .daily-habit-table {
@@ -6648,6 +6903,36 @@ body.is-logged-out .app-shell {
 .daily-habit-main strong {
   overflow-wrap: anywhere;
   font-size: clamp(1rem, 1.35vw, 1.35rem);
+}
+
+.habit-goal-support {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 9px 10px;
+  border: 1px solid rgba(0, 255, 208, 0.2);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(0, 255, 208, 0.08), rgba(0, 246, 255, 0.045)),
+    rgba(0, 246, 255, 0.025);
+}
+
+.habit-goal-support span {
+  color: var(--mint);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.habit-goal-support strong {
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.habit-goal-support.is-missing {
+  border-color: rgba(255, 55, 95, 0.26);
+  background: rgba(255, 55, 95, 0.055);
 }
 
 .daily-habit-actions {
@@ -7404,6 +7689,7 @@ body.is-logged-out .app-shell {
   .daily-habit-row,
   .task-row,
   .reflection-box,
+  .micro-step-builder-row,
   .routine-planner-row,
   .routine-link-editor {
     grid-template-columns: 1fr;
@@ -7414,8 +7700,33 @@ body.is-logged-out .app-shell {
   .daily-done-button,
   .missed-button,
   .reflection-box .ghost-button,
+  .micro-step-remove,
   .routine-link-actions .ghost-button {
     width: 100%;
+  }
+
+  .goal-support-field,
+  .habit-entry-form .form-actions {
+    grid-column: auto;
+  }
+
+  .micro-step-builder-head,
+  .routine-link-status {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .micro-step-item {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .active-step-pill {
+    justify-self: start;
+  }
+
+  .routine-idea-note,
+  .routine-link-status {
+    grid-column: 1 / -1;
   }
 
   .daily-habit-actions {
@@ -7440,8 +7751,7 @@ body.is-logged-out .app-shell {
     width: 100%;
   }
 
-  .routine-planner-heading,
-  .routine-link-status {
+  .routine-planner-heading {
     align-items: stretch;
     flex-direction: column;
   }
@@ -7479,6 +7789,14 @@ body.is-logged-out .app-shell {
   .daily-date-button {
     min-height: 50px;
     padding: 7px;
+  }
+
+  .weekday-picker {
+    grid-template-columns: repeat(4, minmax(54px, 1fr));
+  }
+
+  .micro-step-item {
+    padding: 10px;
   }
 }
 

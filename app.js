@@ -4,6 +4,7 @@ const LEGACY_IMPORT_KEY = `${STORAGE_KEY}-legacy-imported`;
 const SUPABASE_TABLE = "user_tracker_states";
 const DEFAULT_CATEGORIES = ["Health", "School", "Money", "Friends", "Hobbies", "Home", "Adventure", "Community"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const ALL_WEEKDAYS = DAYS.map((_, index) => index);
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const CALENDAR_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -358,19 +359,31 @@ function normalizeStep(step) {
 }
 
 function normalizeHabit(habit) {
-  const weeklyGoal = Math.max(1, Math.min(7, Number(habit?.weeklyGoal || 7)));
+  const scheduleDays = normalizeScheduleDays(habit?.scheduleDays);
+  const weeklyGoal = scheduleDays.length || Math.max(1, Math.min(7, Number(habit?.weeklyGoal || 7)));
   const checks = DAYS.map((_, index) => Boolean(habit?.checks?.[index]));
   const normalized = {
     id: habit?.id || uid("habit"),
     name: String(habit?.name || "").trim() || "Untitled habit",
     weeklyGoal,
     category: String(habit?.category || DEFAULT_CATEGORIES[0]),
+    scheduleDays,
+    supportedGoalId: String(habit?.supportedGoalId || ""),
+    supportedStepId: String(habit?.supportedStepId || ""),
     checks,
     history: normalizeHabitHistory(habit?.history)
   };
 
   migrateWeeklyChecks(normalized, checks);
   return normalized;
+}
+
+function normalizeScheduleDays(value) {
+  if (!Array.isArray(value)) return [...ALL_WEEKDAYS];
+  const days = [...new Set(value.map(Number))]
+    .filter((day) => Number.isInteger(day) && day >= 0 && day < DAYS.length)
+    .sort((a, b) => a - b);
+  return days.length ? days : [...ALL_WEEKDAYS];
 }
 
 function normalizeTask(task) {
@@ -427,6 +440,20 @@ function habitDoneOn(habit, key = selectedHabitDate()) {
   return Boolean(habitRecord(habit, key).done);
 }
 
+function weekdayIndexForKey(key) {
+  const day = dateForKey(key).getDay();
+  return (day + 6) % 7;
+}
+
+function isHabitScheduledOn(habit, key = selectedHabitDate()) {
+  const schedule = normalizeScheduleDays(habit.scheduleDays);
+  return schedule.includes(weekdayIndexForKey(key));
+}
+
+function scheduledHabitsForDate(key = selectedHabitDate()) {
+  return state.habits.filter((habit) => isHabitScheduledOn(habit, key));
+}
+
 function setHabitDone(habit, key, done) {
   const record = ensureHabitRecord(habit, key);
   record.done = done;
@@ -442,22 +469,32 @@ function setHabitReflection(habit, key, reflection) {
 function habitStreak(habit, fromKey = todayKey()) {
   let streak = 0;
   let cursor = dateForKey(fromKey);
-  while (habitDoneOn(habit, dateKey(cursor))) {
-    streak += 1;
+  let guard = 0;
+  while (!isHabitScheduledOn(habit, dateKey(cursor)) && guard < 370) {
     cursor = addDays(cursor, -1);
+    guard += 1;
+  }
+  while (isHabitScheduledOn(habit, dateKey(cursor)) && habitDoneOn(habit, dateKey(cursor)) && guard < 740) {
+    streak += 1;
+    do {
+      cursor = addDays(cursor, -1);
+      guard += 1;
+    } while (!isHabitScheduledOn(habit, dateKey(cursor)) && guard < 740);
   }
   return streak;
 }
 
 function habitDoneRecordCount() {
   return state.habits.reduce((sum, habit) => {
-    return sum + Object.values(habit.history || {}).filter((record) => record.done).length;
+    return sum + Object.entries(habit.history || {}).filter(([key, record]) => {
+      return record.done && isHabitScheduledOn(habit, key);
+    }).length;
   }, 0);
 }
 
 function todayMissedHabits() {
   const key = todayKey();
-  return state.habits.filter((habit) => !habitDoneOn(habit, key));
+  return scheduledHabitsForDate(key).filter((habit) => !habitDoneOn(habit, key));
 }
 
 function shouldShowReflection(key) {
@@ -575,13 +612,14 @@ function totals() {
   const totalSteps = state.goals.reduce((sum, goal) => sum + goal.steps.length, 0);
   const stepsDone = state.goals.reduce((sum, goal) => sum + goal.steps.filter((step) => step.done).length, 0);
   const today = todayKey();
-  const plannedChecks = state.habits.length;
-  const checksDone = state.habits.filter((habit) => habitDoneOn(habit, today)).length;
+  const scheduledToday = scheduledHabitsForDate(today);
+  const plannedChecks = scheduledToday.length;
+  const checksDone = scheduledToday.filter((habit) => habitDoneOn(habit, today)).length;
   const missedToday = Math.max(0, plannedChecks - checksDone);
   const totalHabitCompletions = habitDoneRecordCount();
   const habitScore = plannedChecks ? Math.round((checksDone / plannedChecks) * 100) : 0;
-  const overallProgress = goalCount || state.habits.length
-    ? Math.round((averageGoalProgress + habitScore) / ((goalCount ? 1 : 0) + (state.habits.length ? 1 : 0)))
+  const overallProgress = goalCount || plannedChecks
+    ? Math.round((averageGoalProgress + habitScore) / ((goalCount ? 1 : 0) + (plannedChecks ? 1 : 0)))
     : 0;
   const dueSoon = state.goals.filter((goal) => {
     const left = daysLeft(goal.deadline);
@@ -643,7 +681,7 @@ function syncMetrics() {
   setText('[data-metric="strongestStreak"]', `${data.bestHabit.streak} day streak`);
   setText('[data-copy="strongestStreak"]', `${data.bestHabit.streak} day streak`);
   setText('[data-metric="recoveryHabit"]', data.habitCount ? findRecoveryHabit() : "None");
-  setText('[data-metric="weeklyChecks"]', `${data.checksDone} / ${data.plannedChecks} habits done today`);
+  setText('[data-metric="weeklyChecks"]', `${data.checksDone} / ${data.plannedChecks} scheduled habits done today`);
   setText('[data-metric="rewardProgress"]', `${data.xp} XP earned`);
   setText('[data-metric="weeklyXp"]', data.xp);
   setText('[data-metric="nextUnlock"]', `${Math.min(100, Math.round((data.xp / 300) * 100))}%`);
@@ -652,7 +690,7 @@ function syncMetrics() {
   setText('[data-copy="goalLeft"]', data.goalCount ? `${data.goalCount - data.achievedGoals} still in motion` : "No goals yet");
   setText('[data-copy="habitChecks"]', `${data.checksDone} done today`);
   setText('[data-copy="goalAreas"]', `Across ${new Set(state.goals.map((goal) => goal.category)).size} life areas`);
-  setText('[data-copy="habitPlanned"]', `Out of ${data.plannedChecks} daily habits`);
+  setText('[data-copy="habitPlanned"]', `Out of ${data.plannedChecks} scheduled today`);
   setText('[data-copy="bestHabit"]', data.bestHabit.streak > 0 ? data.bestHabit.name : "No habits yet");
 
   setBar("overallProgress", data.overallProgress);
@@ -710,12 +748,44 @@ function findGoalStep(goalId, stepId) {
   return { goal, step };
 }
 
-function makeHabit(name, category) {
+function goalStepOptions() {
+  return state.goals.flatMap((goal) =>
+    goal.steps.map((step, index) => ({
+      goal,
+      step,
+      index,
+      value: `${goal.id}:${step.id}`,
+      label: `${goal.title} - Step ${index + 1}: ${step.text}`
+    }))
+  );
+}
+
+function parseGoalStepValue(value) {
+  const [goalId = "", stepId = ""] = String(value || "").split(":");
+  const { goal, step } = findGoalStep(goalId, stepId);
+  return goal && step ? { goalId: goal.id, stepId: step.id } : { goalId: "", stepId: "" };
+}
+
+function supportingHabitsForStep(goal, step) {
+  const matches = state.habits.filter((habit) => {
+    return habit.supportedGoalId === goal.id && habit.supportedStepId === step.id;
+  });
+  if (step.linkedHabitId) {
+    const legacyHabit = findHabitById(step.linkedHabitId);
+    if (legacyHabit && !matches.some((habit) => habit.id === legacyHabit.id)) matches.push(legacyHabit);
+  }
+  return matches;
+}
+
+function makeHabit(name, category, scheduleDays = ALL_WEEKDAYS, supportedGoalId = "", supportedStepId = "") {
   return {
     id: uid("habit"),
     name: String(name || "").trim() || "Untitled habit",
-    weeklyGoal: 7,
+    scheduleDays: normalizeScheduleDays(scheduleDays),
+    weeklyGoal: normalizeScheduleDays(scheduleDays).length,
     category: String(category || fallbackCategory()),
+    supportedGoalId: String(supportedGoalId || ""),
+    supportedStepId: String(supportedStepId || ""),
     checks: [false, false, false, false, false, false, false],
     history: {}
   };
@@ -766,7 +836,15 @@ function unlinkStepRoutine(step) {
 }
 
 function routineProgress(habit, target = 7) {
-  const keys = recentHabitDateKeys().slice(0, target);
+  const keys = [];
+  let cursor = dateForKey(todayKey());
+  let guard = 0;
+  while (keys.length < target && guard < 90) {
+    const key = dateKey(cursor);
+    if (isHabitScheduledOn(habit, key)) keys.push(key);
+    cursor = addDays(cursor, -1);
+    guard += 1;
+  }
   return keys.filter((key) => habitDoneOn(habit, key)).length;
 }
 
@@ -897,19 +975,22 @@ function goalRow(goal, index) {
 function stepsMarkup(goal) {
   if (!goal.steps.length) return "";
   const completed = goal.steps.filter((step) => step.done).length;
+  const activeStep = goal.steps.find((step) => !step.done);
   return `
     <div class="step-list">
       <div class="micro-step-summary">
         <strong>Micro steps</strong>
         <span>${completed} / ${goal.steps.length} steps complete</span>
       </div>
-      ${goal.steps.map((step) => `
-        <div class="micro-step-item ${step.done ? "is-complete" : ""}">
+      ${goal.steps.map((step, index) => `
+        <div class="micro-step-item ${step.done ? "is-complete" : ""} ${activeStep?.id === step.id ? "is-active-step" : ""}">
+          <div class="micro-step-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</div>
           <label class="step-check">
             <input type="checkbox" data-step="${step.id}" ${step.done ? "checked" : ""}>
             <span>${escapeHtml(step.text)}</span>
           </label>
-          ${step.routineIdea ? `<div class="routine-idea-note"><span>Daily routine idea</span><strong>${escapeHtml(step.routineIdea)}</strong></div>` : ""}
+          ${activeStep?.id === step.id ? `<span class="active-step-pill">Active step</span>` : ""}
+          ${step.routineIdea ? `<div class="routine-idea-note"><span>Routine to build</span><strong>${escapeHtml(step.routineIdea)}</strong></div>` : ""}
           ${routineStepMarkup(goal, step)}
         </div>
       `).join("")}
@@ -918,59 +999,33 @@ function stepsMarkup(goal) {
 }
 
 function routineStepMarkup(goal, step) {
-  const key = routineEditKey(goal.id, step.id);
-  const linkedHabit = step.linkedHabitId ? findHabitById(step.linkedHabitId) : null;
-  const isEditing = editingRoutineLinkKey === key;
-
-  if (isEditing) {
-    return `
-      <div class="routine-link-editor">
-        <div>
-          <strong>Routine link</strong>
-          <span>Choose an existing habit that supports this step.</span>
-        </div>
-        <select data-routine-picker="${step.id}" aria-label="Choose linked habit">
-          ${habitOptionsMarkup(step.linkedHabitId)}
-        </select>
-        <div class="routine-link-actions">
-          <button class="ghost-button" type="button" data-save-routine-link="${step.id}" ${state.habits.length ? "" : "disabled"}>Save link</button>
-          <button class="ghost-button" type="button" data-cancel-routine-link="${step.id}">Cancel</button>
-        </div>
-      </div>
-    `;
-  }
-
-  if (!step.linkedHabitId) {
+  const supportHabits = supportingHabitsForStep(goal, step);
+  if (!supportHabits.length) {
     return `
       <div class="routine-link-status is-unlinked">
-        <span>Use habits separately when this needs repeated practice.</span>
-      </div>
-    `;
-  }
-
-  if (!linkedHabit) {
-    return `
-      <div class="routine-link-status is-missing">
-        <span>Linked habit is missing</span>
+        <span>No habit supports this step yet.</span>
         <div class="routine-link-actions">
-          <button class="ghost-button" type="button" data-unlink-routine="${step.id}">Unlink</button>
+          <a class="ghost-button link-button" href="${habitLinkHref()}" data-routine-habit-link>Go to habits</a>
         </div>
       </div>
     `;
   }
 
-  const target = step.linkedHabitTarget || 7;
-  const doneCount = routineProgress(linkedHabit, target);
-  const doneToday = habitDoneOn(linkedHabit, todayKey());
   return `
     <div class="routine-link-status is-linked">
       <div>
-        <span>Routine: ${escapeHtml(linkedHabit.name)}</span>
-        <strong>${doneToday ? "Done today" : "Open today"} | ${doneCount} / ${target} routine checks</strong>
+        <span>Supporting habits</span>
+        ${supportHabits.map((habit) => {
+          const target = step.linkedHabitTarget || 7;
+          const doneCount = routineProgress(habit, target);
+          const scheduledToday = isHabitScheduledOn(habit, todayKey());
+          const doneToday = habitDoneOn(habit, todayKey());
+          const todayStatus = !scheduledToday ? "Not scheduled today" : doneToday ? "Done today" : "Open today";
+          return `<strong>${escapeHtml(habit.name)} - ${todayStatus} | ${doneCount} / ${target} routine checks</strong>`;
+        }).join("")}
       </div>
       <div class="routine-link-actions">
-        <a class="ghost-button link-button" href="${habitLinkHref()}" data-routine-habit-link>Habits</a>
-        <button class="ghost-button" type="button" data-unlink-routine="${step.id}">Unlink</button>
+        <a class="ghost-button link-button" href="${habitLinkHref()}" data-routine-habit-link>Go to habits</a>
       </div>
     </div>
   `;
@@ -1457,10 +1512,21 @@ function renderHabits() {
     table.classList.add("daily-habit-table");
     table.append(dailyDateControl());
     if (!state.habits.length) return;
+    const habitsForDate = scheduledHabitsForDate(selectedHabitDate());
+    if (!habitsForDate.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state compact daily-empty-message";
+      empty.innerHTML = `
+        <strong>No habits scheduled for ${formatHabitDay(selectedHabitDate())}.</strong>
+        <span>Add a habit above or change a habit's repeat days when it should appear here.</span>
+      `;
+      table.append(empty);
+      return;
+    }
 
     const list = document.createElement("div");
     list.className = "daily-habit-list";
-    state.habits.forEach((habit) => list.append(dailyHabitRow(habit, selectedHabitDate())));
+    habitsForDate.forEach((habit) => list.append(dailyHabitRow(habit, selectedHabitDate())));
     table.append(list);
   });
 
@@ -1508,7 +1574,8 @@ function dailyHabitRow(habit, key) {
   row.innerHTML = `
     <div class="daily-habit-main">
       <strong>${escapeHtml(habit.name)}</strong>
-      <span>${escapeHtml(habit.category || fallbackCategory())} | ${formatHabitDay(key)}</span>
+      <span>${escapeHtml(habit.category || fallbackCategory())} | ${formatHabitDay(key)} | ${escapeHtml(scheduleLabel(habit))}</span>
+      ${habitSupportMarkup(habit)}
       ${linkedTaskMarkup(habit)}
     </div>
     <div class="daily-habit-actions">
@@ -1565,13 +1632,30 @@ function dailyHabitRow(habit, key) {
   return row;
 }
 
+function habitSupportMarkup(habit) {
+  if (!habit.supportedGoalId || !habit.supportedStepId) return "";
+  const { goal, step } = findGoalStep(habit.supportedGoalId, habit.supportedStepId);
+  if (!goal || !step) {
+    return `<div class="habit-goal-support is-missing"><span>Goal support link missing</span></div>`;
+  }
+  return `
+    <div class="habit-goal-support">
+      <span>Supports goal</span>
+      <strong>${escapeHtml(goal.title)} - ${escapeHtml(step.text)}</strong>
+    </div>
+  `;
+}
+
 function renderStreaks() {
   document.querySelectorAll("[data-streak-list]").forEach((list) => {
     list.innerHTML = "";
     state.habits.forEach((habit) => {
       const row = document.createElement("div");
       row.className = "streak-row";
-      row.innerHTML = `<strong>${escapeHtml(habit.name)}</strong><span>${habitStreak(habit)} days</span>`;
+      row.innerHTML = `
+        <strong>${escapeHtml(habit.name)}</strong>
+        <span>${habitStreak(habit)} scheduled checks | ${escapeHtml(scheduleLabel(habit))}</span>
+      `;
       list.append(row);
     });
   });
@@ -2028,7 +2112,7 @@ function bindDateHints() {
   syncDateHints();
 }
 
-function microStepLines(form) {
+function microStepLinesFromTextarea(form) {
   const textarea = form.querySelector('textarea[name="steps"]');
   return String(textarea?.value || "")
     .split("\n")
@@ -2036,7 +2120,30 @@ function microStepLines(form) {
     .filter(Boolean);
 }
 
+function microStepEntries(form) {
+  const builder = form.querySelector("[data-micro-step-builder]");
+  if (!builder) {
+    return microStepLinesFromTextarea(form).map((text) => ({ text, routineIdea: "" }));
+  }
+  return [...builder.querySelectorAll("[data-micro-step-row]")]
+    .map((row) => ({
+      text: String(row.querySelector("[data-step-text]")?.value || "").trim(),
+      routineIdea: String(row.querySelector("[data-step-routine]")?.value || "").trim()
+    }))
+    .filter((entry) => entry.text);
+}
+
+function microStepLines(form) {
+  return microStepEntries(form).map((entry) => entry.text);
+}
+
 function collectRoutinePlannerChoices(form) {
+  const builder = form.querySelector("[data-micro-step-builder]");
+  if (builder) {
+    const choices = microStepEntries(form).map((entry, index) => ({ ...entry, index }));
+    form._routineLinkChoices = choices;
+    return choices;
+  }
   const existing = Array.isArray(form._routineLinkChoices) ? form._routineLinkChoices : [];
   const rows = [...form.querySelectorAll("[data-routine-step-index]")];
   if (!rows.length) return existing;
@@ -2057,6 +2164,122 @@ function collectRoutinePlannerChoices(form) {
   return choices;
 }
 
+function syncMicroStepBackingField(form) {
+  const textarea = form.querySelector('textarea[name="steps"]');
+  if (!textarea) return;
+  textarea.value = microStepEntries(form).map((entry) => entry.text).join("\n");
+}
+
+function makeMicroStepRow(form, entry = {}, index = 0) {
+  const row = document.createElement("div");
+  row.className = "micro-step-builder-row";
+  row.dataset.microStepRow = "";
+  row.innerHTML = `
+    <div class="micro-step-builder-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</div>
+    <label>
+      Step ${index + 1}
+      <input type="text" data-step-text placeholder="${index === 0 ? "First milestone, like master grammar" : "Next milestone"}" value="${escapeHtml(entry.text || "")}">
+    </label>
+    <label>
+      Daily routine that supports it
+      <textarea data-step-routine rows="2" placeholder="Example: Practice grammar for 30 minutes after school.">${escapeHtml(entry.routineIdea || "")}</textarea>
+    </label>
+    <button class="ghost-button micro-step-remove" type="button" data-remove-micro-step aria-label="Remove step ${index + 1}">Remove</button>
+  `;
+  row.querySelector("[data-step-text]")?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addMicroStepRow(form, row);
+  });
+  row.querySelectorAll("input, textarea").forEach((input) => {
+    input.addEventListener("input", () => {
+      syncMicroStepBackingField(form);
+      renderRoutineLinkPlanner(form);
+    });
+  });
+  row.querySelector("[data-remove-micro-step]")?.addEventListener("click", () => {
+    const builder = form.querySelector("[data-micro-step-builder]");
+    const rows = builder ? [...builder.querySelectorAll("[data-micro-step-row]")] : [];
+    if (rows.length <= 1) {
+      row.querySelector("[data-step-text]").value = "";
+      row.querySelector("[data-step-routine]").value = "";
+    } else {
+      row.remove();
+    }
+    refreshMicroStepRows(form);
+    syncMicroStepBackingField(form);
+    renderRoutineLinkPlanner(form);
+  });
+  return row;
+}
+
+function addMicroStepRow(form, afterRow = null, entry = {}) {
+  const list = form.querySelector("[data-micro-step-list]");
+  if (!list) return;
+  const index = [...list.querySelectorAll("[data-micro-step-row]")].length;
+  const row = makeMicroStepRow(form, entry, index);
+  if (afterRow?.parentElement === list) {
+    afterRow.after(row);
+  } else {
+    list.append(row);
+  }
+  refreshMicroStepRows(form);
+  syncMicroStepBackingField(form);
+  window.setTimeout(() => row.querySelector("[data-step-text]")?.focus(), 0);
+}
+
+function refreshMicroStepRows(form) {
+  form.querySelectorAll("[data-micro-step-row]").forEach((row, index) => {
+    const number = String(index + 1).padStart(2, "0");
+    row.querySelector(".micro-step-builder-index").textContent = number;
+    const stepLabel = row.querySelector("label:first-of-type");
+    const removeButton = row.querySelector("[data-remove-micro-step]");
+    if (stepLabel) stepLabel.firstChild.textContent = `Step ${index + 1}`;
+    if (removeButton) removeButton.setAttribute("aria-label", `Remove step ${index + 1}`);
+  });
+}
+
+function resetMicroStepBuilder(form) {
+  const builder = form.querySelector("[data-micro-step-builder]");
+  const list = form.querySelector("[data-micro-step-list]");
+  if (!builder || !list) return;
+  list.innerHTML = "";
+  list.append(makeMicroStepRow(form, {}, 0));
+  syncMicroStepBackingField(form);
+  renderRoutineLinkPlanner(form);
+}
+
+function ensureMicroStepBuilder(form) {
+  if (form.querySelector("[data-micro-step-builder]")) return;
+  const textarea = form.querySelector('textarea[name="steps"]');
+  const field = textarea?.closest("label");
+  if (!textarea || !field) return;
+  const entries = microStepLinesFromTextarea(form).map((text) => ({ text, routineIdea: "" }));
+  field.classList.add("micro-step-source-field");
+  textarea.hidden = true;
+  textarea.setAttribute("aria-hidden", "true");
+  const builder = document.createElement("div");
+  builder.className = "micro-step-builder full-width";
+  builder.dataset.microStepBuilder = "";
+  builder.innerHTML = `
+    <div class="micro-step-builder-head">
+      <div>
+        <strong>Micro steps</strong>
+        <span>Type one milestone, press Enter, then plan the routine that helps you reach it.</span>
+      </div>
+      <button class="ghost-button" type="button" data-add-micro-step>Add step</button>
+    </div>
+    <div class="micro-step-builder-list" data-micro-step-list></div>
+  `;
+  field.after(builder);
+  const list = builder.querySelector("[data-micro-step-list]");
+  (entries.length ? entries : [{}]).forEach((entry, index) => {
+    list.append(makeMicroStepRow(form, entry, index));
+  });
+  builder.querySelector("[data-add-micro-step]")?.addEventListener("click", () => addMicroStepRow(form));
+  syncMicroStepBackingField(form);
+}
+
 function routineChoiceForLine(form, text, index) {
   const choices = collectRoutinePlannerChoices(form);
   const exact = choices.find((choice) => choice.index === index && choice.text === text);
@@ -2065,49 +2288,31 @@ function routineChoiceForLine(form, text, index) {
 }
 
 function renderRoutineLinkPlanner(form) {
+  ensureMicroStepBuilder(form);
   const planner = form.querySelector("[data-routine-link-planner]");
   if (!planner) return;
 
-  const lines = microStepLines(form);
-  if (!lines.length) {
+  const entries = microStepEntries(form);
+  if (!entries.length) {
     form._routineLinkChoices = [];
     planner.innerHTML = `
       <div class="routine-planner-empty">
         <strong>Daily routine support</strong>
-        <span>Add micro steps above, then describe what daily routine could help you make progress.</span>
+        <span>Add your first micro step above. Each step can include the daily routine that will help you reach it.</span>
       </div>
     `;
     return;
   }
 
-  const nextChoices = lines.map((line, index) => {
-    const choice = routineChoiceForLine(form, line, index);
-    return { text: line, routineIdea: choice.routineIdea || choice.habitIdea || "", index };
-  });
-  form._routineLinkChoices = nextChoices;
+  form._routineLinkChoices = entries.map((entry, index) => ({ ...entry, index }));
 
   planner.innerHTML = `
     <div class="routine-planner-heading">
       <div>
         <strong>Daily routine support</strong>
-        <span>Micro steps measure success. Habits describe what you can repeat in real life to get there.</span>
+        <span>Micro steps measure success. Add habits separately when a routine needs to be checked on scheduled days.</span>
       </div>
-      <small>${lines.length} step${lines.length === 1 ? "" : "s"} planned</small>
-    </div>
-    <div class="routine-planner-list">
-      ${nextChoices.map((choice, index) => `
-        <div class="routine-planner-row" data-routine-step-index="${index}" data-routine-step-text="${escapeHtml(choice.text)}">
-          <div class="routine-step-copy">
-            <span>Step ${index + 1}</span>
-            <strong>${escapeHtml(choice.text)}</strong>
-          </div>
-          <label class="routine-idea-field">
-            Daily routine idea
-            <textarea data-routine-idea rows="2" placeholder="Example: Practice English for 30 minutes after school.">${escapeHtml(choice.routineIdea)}</textarea>
-          </label>
-          <p>Optional. Add the actual routine in the habit tracker when you want it checked daily.</p>
-        </div>
-      `).join("")}
+      <small>${entries.length} step${entries.length === 1 ? "" : "s"} planned</small>
     </div>
   `;
 }
@@ -2117,26 +2322,97 @@ function renderRoutineLinkPlanners() {
 }
 
 function bindRoutinePlanner(form) {
-  const textarea = form.querySelector('textarea[name="steps"]');
-  const categorySelect = form.querySelector('select[name="category"]');
-  const planner = form.querySelector("[data-routine-link-planner]");
-
-  textarea?.addEventListener("input", () => renderRoutineLinkPlanner(form));
-  categorySelect?.addEventListener("change", () => renderRoutineLinkPlanner(form));
-  planner?.addEventListener("input", (event) => {
-    collectRoutinePlannerChoices(form);
-    if (event.target.matches("[data-routine-idea]")) return;
-    renderRoutineLinkPlanner(form);
-  });
-  planner?.addEventListener("change", () => collectRoutinePlannerChoices(form));
+  ensureMicroStepBuilder(form);
+  form.querySelector('select[name="category"]')?.addEventListener("change", () => renderRoutineLinkPlanner(form));
 }
 
 function stepsFromGoalForm(form, category) {
-  const lines = microStepLines(form);
-  const choices = collectRoutinePlannerChoices(form);
-  return lines.map((text, index) => {
-    const choice = choices[index] || { routineIdea: "" };
-    return normalizeStep({ id: uid("step"), text, done: false, routineIdea: choice.routineIdea || "", linkedHabitTarget: 7 });
+  const entries = microStepEntries(form);
+  return entries.map((entry) => {
+    return normalizeStep({ id: uid("step"), text: entry.text, done: false, routineIdea: entry.routineIdea || "", linkedHabitTarget: 7 });
+  });
+}
+
+function ensureWeekdayPicker(form) {
+  if (form.querySelector("[data-weekday-picker]")) return;
+  const categoryField = form.querySelector(".category-field") || form.querySelector('select[name="category"]')?.closest("label");
+  if (!categoryField) return;
+  const field = document.createElement("div");
+  field.className = "weekday-field";
+  field.innerHTML = `
+    <div class="weekday-field-head">
+      <strong>Repeat on</strong>
+      <small>Choose the days this habit belongs in your life.</small>
+    </div>
+    <div class="weekday-picker" data-weekday-picker aria-label="Choose repeat days"></div>
+  `;
+  categoryField.after(field);
+  form._scheduleDays = [...ALL_WEEKDAYS];
+}
+
+function selectedScheduleDays(form) {
+  const selected = Array.isArray(form._scheduleDays) ? normalizeScheduleDays(form._scheduleDays) : [...ALL_WEEKDAYS];
+  return selected;
+}
+
+function renderWeekdayPickers() {
+  document.querySelectorAll("[data-habit-form]").forEach((form) => {
+    ensureWeekdayPicker(form);
+    const picker = form.querySelector("[data-weekday-picker]");
+    if (!picker) return;
+    const selected = selectedScheduleDays(form);
+    picker.innerHTML = DAYS.map((day, index) => `
+      <button class="weekday-choice ${selected.includes(index) ? "is-selected" : ""}" type="button" data-weekday-choice="${index}" aria-pressed="${selected.includes(index)}">
+        ${day}
+      </button>
+    `).join("");
+    picker.querySelectorAll("[data-weekday-choice]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const day = Number(button.dataset.weekdayChoice);
+        const current = selectedScheduleDays(form);
+        const next = current.includes(day) ? current.filter((item) => item !== day) : [...current, day];
+        form._scheduleDays = normalizeScheduleDays(next.length ? next : current);
+        renderWeekdayPickers();
+      });
+    });
+  });
+}
+
+function scheduleLabel(habit) {
+  const days = normalizeScheduleDays(habit.scheduleDays);
+  if (days.length === 7) return "Every day";
+  return days.map((day) => DAYS[day]).join(", ");
+}
+
+function ensureGoalSupportPicker(form) {
+  if (form.querySelector("[data-goal-step-support-field]")) return;
+  const actions = form.querySelector(".form-actions") || form.querySelector('button[type="submit"]')?.parentElement;
+  if (!actions) return;
+  const field = document.createElement("label");
+  field.className = "goal-support-field";
+  field.dataset.goalStepSupportField = "";
+  field.innerHTML = `
+    Supports goal step
+    <select name="supportedStepKey" data-goal-step-support></select>
+    <small>Optional. Use this when a habit helps a specific goal milestone.</small>
+  `;
+  actions.before(field);
+}
+
+function renderGoalSupportPickers() {
+  const options = goalStepOptions();
+  document.querySelectorAll("[data-habit-form]").forEach((form) => {
+    ensureGoalSupportPicker(form);
+    const select = form.querySelector("[data-goal-step-support]");
+    if (!select) return;
+    const previous = select.value;
+    select.innerHTML = `
+      <option value="">No goal step selected</option>
+      ${options.map((option) => `
+        <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>
+      `).join("")}
+    `;
+    select.value = options.some((option) => option.value === previous) ? previous : "";
   });
 }
 
@@ -2171,6 +2447,7 @@ function bindForms() {
       });
       goalForm.reset();
       goalForm._routineLinkChoices = [];
+      resetMicroStepBuilder(goalForm);
       renderRoutineLinkPlanner(goalForm);
       window.setTimeout(syncDateHints, 0);
       saveAndRender();
@@ -2179,13 +2456,25 @@ function bindForms() {
   });
 
   document.querySelectorAll("[data-habit-form]").forEach((habitForm) => {
+    ensureWeekdayPicker(habitForm);
+    ensureGoalSupportPicker(habitForm);
     habitForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const form = new FormData(habitForm);
-      state.habits.push(makeHabit(form.get("name"), form.get("category")));
+      const support = parseGoalStepValue(form.get("supportedStepKey"));
+      state.habits.push(makeHabit(
+        form.get("name"),
+        form.get("category"),
+        selectedScheduleDays(habitForm),
+        support.goalId,
+        support.stepId
+      ));
       habitForm.reset();
+      habitForm._scheduleDays = [...ALL_WEEKDAYS];
       const weeklyInput = habitForm.querySelector('[name="weeklyGoal"]');
       if (weeklyInput) weeklyInput.value = 7;
+      renderWeekdayPickers();
+      renderGoalSupportPickers();
       saveAndRender();
       showSaveStatus("habit");
     });
@@ -2212,6 +2501,8 @@ function render() {
   renderTodayReadouts();
   syncMetrics();
   renderCategoryOptions();
+  renderWeekdayPickers();
+  renderGoalSupportPickers();
   renderRoutineLinkPlanners();
   renderGoals();
   renderCategories();
