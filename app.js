@@ -15,6 +15,9 @@ let editingCategoryName = "";
 let pendingCategoryRemoval = "";
 let pendingDeleteAction = null;
 let editingRoutineLinkKey = "";
+let editingGoalId = "";
+let editingHabitId = "";
+let editingTaskId = "";
 let openReflectionKey = "";
 let supabaseClient = null;
 let authSession = null;
@@ -391,7 +394,11 @@ function normalizeTask(task) {
     id: task?.id || uid("task"),
     title: String(task?.title || "").trim() || "Untitled task",
     subtext: String(task?.subtext || "").trim(),
+    deadline: String(task?.deadline || ""),
+    taskType: String(task?.taskType || (task?.linkedHabitId ? "habit" : "task")),
     linkedHabitId: String(task?.linkedHabitId || ""),
+    supportedGoalId: String(task?.supportedGoalId || ""),
+    supportedStepId: String(task?.supportedStepId || ""),
     done: Boolean(task?.done),
     createdAt: String(task?.createdAt || new Date().toISOString()),
     completedAt: String(task?.completedAt || "")
@@ -777,6 +784,10 @@ function supportingHabitsForStep(goal, step) {
   return matches;
 }
 
+function supportingTasksForStep(goal, step) {
+  return state.tasks.filter((task) => task.supportedGoalId === goal.id && task.supportedStepId === step.id);
+}
+
 function makeHabit(name, category, scheduleDays = ALL_WEEKDAYS, supportedGoalId = "", supportedStepId = "") {
   return {
     id: uid("habit"),
@@ -791,21 +802,35 @@ function makeHabit(name, category, scheduleDays = ALL_WEEKDAYS, supportedGoalId 
   };
 }
 
-function makeTask(title, subtext, linkedHabitId = "") {
+function makeTask(
+  title,
+  subtext,
+  linkedHabitId = "",
+  deadline = "",
+  supportedGoalId = "",
+  supportedStepId = "",
+  taskType = "task"
+) {
   const habit = findHabitById(linkedHabitId);
+  const support = parseGoalStepValue(supportedGoalId && supportedStepId ? `${supportedGoalId}:${supportedStepId}` : "");
+  const date = dateFromValue(deadline);
   return {
     id: uid("task"),
     title: String(title || "").trim() || "Untitled task",
     subtext: String(subtext || "").trim(),
+    deadline: date ? dateToValue(date) : "",
+    taskType: taskType === "habit" ? "habit" : "task",
     linkedHabitId: habit ? habit.id : "",
+    supportedGoalId: support.goalId,
+    supportedStepId: support.stepId,
     done: false,
     createdAt: new Date().toISOString(),
     completedAt: ""
   };
 }
 
-function tasksForHabit(habitId) {
-  return state.tasks.filter((task) => task.linkedHabitId === habitId);
+function tasksForHabit(habitId, key = selectedHabitDate()) {
+  return state.tasks.filter((task) => task.linkedHabitId === habitId && task.deadline === key);
 }
 
 function taskHabitOptionsMarkup(selectedId = "") {
@@ -814,6 +839,42 @@ function taskHabitOptionsMarkup(selectedId = "") {
     ${state.habits.map((habit) => `
       <option value="${escapeHtml(habit.id)}" ${habit.id === selectedId ? "selected" : ""}>${escapeHtml(habit.name)}</option>
     `).join("")}
+  `;
+}
+
+function categoryOptionsMarkup(selected = fallbackCategory()) {
+  const categories = categoryList();
+  const formCategories = categories.length ? categories : [fallbackCategory()];
+  const selectedCategory = formCategories.includes(selected) ? selected : fallbackCategory();
+  return formCategories.map((category) => `
+    <option value="${escapeHtml(category)}" ${category === selectedCategory ? "selected" : ""}>${escapeHtml(category)}</option>
+  `).join("");
+}
+
+function scheduleDayChoicesMarkup(selectedDays = ALL_WEEKDAYS) {
+  const selected = normalizeScheduleDays(selectedDays);
+  return DAYS.map((day, index) => `
+    <button class="weekday-choice ${selected.includes(index) ? "is-selected" : ""}" type="button" data-edit-weekday="${index}" aria-pressed="${selected.includes(index)}">
+      ${day}
+    </button>
+  `).join("");
+}
+
+function goalStepSelectMarkup(selectedGoalId = "", selectedStepId = "") {
+  const selected = selectedGoalId && selectedStepId ? `${selectedGoalId}:${selectedStepId}` : "";
+  return `
+    <option value="">No goal step selected</option>
+    ${goalStepOptions().map((option) => `
+      <option value="${escapeHtml(option.value)}" ${option.value === selected ? "selected" : ""}>${escapeHtml(option.label)}</option>
+    `).join("")}
+  `;
+}
+
+function taskTypeOptionsMarkup(selected = "task") {
+  const value = selected === "habit" ? "habit" : "task";
+  return `
+    <option value="task" ${value === "task" ? "selected" : ""}>One-off task</option>
+    <option value="habit" ${value === "habit" ? "selected" : ""}>Habit-linked task</option>
   `;
 }
 
@@ -852,6 +913,10 @@ function habitLinkHref() {
   return document.body.dataset.page === "dashboard" ? "#habits-section" : "habits.html";
 }
 
+function taskLinkHref() {
+  return document.body.dataset.page === "dashboard" ? "#tasks-section" : "tasks.html";
+}
+
 function habitOptionsMarkup(selectedId = "") {
   if (!state.habits.length) return `<option value="">No habits yet</option>`;
   return `
@@ -879,6 +944,12 @@ function renderGoals() {
 function goalRow(goal, index) {
   const row = document.createElement("div");
   row.className = "goal-row wide";
+  if (editingGoalId === goal.id) {
+    row.classList.add("is-editing-item");
+    row.innerHTML = goalEditMarkup(goal);
+    bindGoalEditControls(row, goal);
+    return row;
+  }
   const progress = goalProgress(goal);
   const left = daysLeft(goal.deadline);
   const leftLabel = left === null ? "No deadline" : left < 0 ? "Overdue" : `${left} days left`;
@@ -896,9 +967,14 @@ function goalRow(goal, index) {
     <div class="goal-meta">
       <strong>${progress}%</strong>
       <span>${leftLabel}</span>
+      <button class="ghost-button edit-item-button" type="button" data-edit-goal="${goal.id}">Edit</button>
       <button class="delete-button" type="button" data-delete-goal="${goal.id}">Delete</button>
     </div>
   `;
+  row.querySelector("[data-edit-goal]")?.addEventListener("click", () => {
+    editingGoalId = goal.id;
+    render();
+  });
   row.querySelectorAll("[data-step]").forEach((input) => {
     input.addEventListener("change", () => {
       const step = goal.steps.find((item) => item.id === input.dataset.step);
@@ -972,6 +1048,149 @@ function goalRow(goal, index) {
   return row;
 }
 
+function goalEditMarkup(goal) {
+  return `
+    <form class="edit-card-form goal-edit-form" data-goal-edit-form="${goal.id}">
+      <div class="edit-form-heading">
+        <div>
+          <p class="eyebrow">Edit goal</p>
+          <h3>${escapeHtml(goal.title)}</h3>
+        </div>
+        <div class="edit-form-actions">
+          <button class="text-button" type="submit">Save</button>
+          <button class="ghost-button" type="button" data-cancel-goal-edit>Cancel</button>
+          <button class="delete-button" type="button" data-delete-goal="${goal.id}">Delete</button>
+        </div>
+      </div>
+      <label>
+        Goal name
+        <input name="title" type="text" value="${escapeHtml(goal.title)}" required>
+      </label>
+      <label>
+        Area of life
+        <select name="category" required>${categoryOptionsMarkup(goal.category)}</select>
+      </label>
+      <label>
+        Deadline
+        <input name="deadline" type="date" value="${escapeHtml(goal.deadline)}">
+      </label>
+      <label>
+        Why this matters
+        <textarea name="why" rows="2">${escapeHtml(goal.why)}</textarea>
+      </label>
+      <label>
+        Measure success
+        <input name="measure" type="text" value="${escapeHtml(goal.measure)}">
+      </label>
+      <label>
+        Reward
+        <input name="reward" type="text" value="${escapeHtml(goal.reward)}">
+      </label>
+      <div class="edit-micro-steps">
+        <div class="micro-step-builder-head">
+          <div>
+            <strong>Micro steps</strong>
+            <span>Edit milestones and the routine idea that supports each one.</span>
+          </div>
+          <button class="ghost-button" type="button" data-add-edit-step>Add step</button>
+        </div>
+        <div class="edit-step-list" data-edit-step-list>
+          ${goal.steps.map((step, stepIndex) => editStepMarkup(step, stepIndex)).join("") || editStepMarkup(normalizeStep({ text: "" }), 0)}
+        </div>
+      </div>
+    </form>
+  `;
+}
+
+function editStepMarkup(step, index) {
+  return `
+    <div class="micro-step-builder-row" data-edit-step-row data-step-id="${escapeHtml(step.id || "")}">
+      <div class="micro-step-builder-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</div>
+      <label>
+        Step ${index + 1}
+        <input type="text" data-edit-step-text value="${escapeHtml(step.text || "")}" placeholder="Milestone">
+      </label>
+      <label>
+        Daily routine that supports it
+        <textarea data-edit-step-routine rows="2" placeholder="Example: Practice for 30 minutes after school.">${escapeHtml(step.routineIdea || "")}</textarea>
+      </label>
+      <label class="edit-step-done">
+        Done
+        <input type="checkbox" data-edit-step-done ${step.done ? "checked" : ""}>
+      </label>
+      <button class="ghost-button micro-step-remove" type="button" data-remove-edit-step>Remove</button>
+    </div>
+  `;
+}
+
+function bindGoalEditControls(row, goal) {
+  const form = row.querySelector("[data-goal-edit-form]");
+  const list = row.querySelector("[data-edit-step-list]");
+  const refresh = () => {
+    list?.querySelectorAll("[data-edit-step-row]").forEach((stepRow, index) => {
+      stepRow.querySelector(".micro-step-builder-index").textContent = String(index + 1).padStart(2, "0");
+      const label = stepRow.querySelector("label:first-of-type");
+      if (label) label.firstChild.textContent = `Step ${index + 1}`;
+    });
+  };
+  row.querySelector("[data-add-edit-step]")?.addEventListener("click", () => {
+    list?.insertAdjacentHTML("beforeend", editStepMarkup(normalizeStep({ text: "" }), list.querySelectorAll("[data-edit-step-row]").length));
+    refresh();
+  });
+  row.addEventListener("click", (event) => {
+    const remove = event.target.closest("[data-remove-edit-step]");
+    if (!remove) return;
+    const stepRow = remove.closest("[data-edit-step-row]");
+    const rows = list ? [...list.querySelectorAll("[data-edit-step-row]")] : [];
+    if (rows.length <= 1) {
+      stepRow.querySelector("[data-edit-step-text]").value = "";
+      stepRow.querySelector("[data-edit-step-routine]").value = "";
+      stepRow.querySelector("[data-edit-step-done]").checked = false;
+    } else {
+      stepRow.remove();
+    }
+    refresh();
+  });
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    goal.title = String(data.get("title") || "").trim() || goal.title;
+    goal.category = String(data.get("category") || fallbackCategory());
+    goal.deadline = String(data.get("deadline") || "");
+    goal.why = String(data.get("why") || "").trim();
+    goal.measure = String(data.get("measure") || "").trim();
+    goal.reward = String(data.get("reward") || "").trim();
+    goal.steps = [...form.querySelectorAll("[data-edit-step-row]")]
+      .map((stepRow) => normalizeStep({
+        id: stepRow.dataset.stepId || uid("step"),
+        text: stepRow.querySelector("[data-edit-step-text]")?.value,
+        routineIdea: stepRow.querySelector("[data-edit-step-routine]")?.value,
+        done: stepRow.querySelector("[data-edit-step-done]")?.checked,
+        linkedHabitTarget: 7
+      }))
+      .filter((step) => step.text);
+    editingGoalId = "";
+    saveAndRender();
+  });
+  row.querySelector("[data-cancel-goal-edit]")?.addEventListener("click", () => {
+    editingGoalId = "";
+    render();
+  });
+  row.querySelector("[data-delete-goal]")?.addEventListener("click", () => {
+    openDeleteConfirm({
+      eyebrow: "Confirm delete",
+      title: "Delete goal?",
+      copy: `This will delete "${goal.title}" and its micro steps. Linked habits will stay in your habit tracker.`,
+      confirmLabel: "Delete goal",
+      onConfirm: () => {
+        state.goals = state.goals.filter((item) => item.id !== goal.id);
+        editingGoalId = "";
+        saveAndRender();
+      }
+    });
+  });
+}
+
 function stepsMarkup(goal) {
   if (!goal.steps.length) return "";
   const completed = goal.steps.filter((step) => step.done).length;
@@ -1000,10 +1219,11 @@ function stepsMarkup(goal) {
 
 function routineStepMarkup(goal, step) {
   const supportHabits = supportingHabitsForStep(goal, step);
-  if (!supportHabits.length) {
+  const supportTasks = supportingTasksForStep(goal, step);
+  if (!supportHabits.length && !supportTasks.length) {
     return `
       <div class="routine-link-status is-unlinked">
-        <span>No habit supports this step yet.</span>
+        <span>No habit or task supports this step yet.</span>
         <div class="routine-link-actions">
           <a class="ghost-button link-button" href="${habitLinkHref()}" data-routine-habit-link>Go to habits</a>
         </div>
@@ -1014,7 +1234,7 @@ function routineStepMarkup(goal, step) {
   return `
     <div class="routine-link-status is-linked">
       <div>
-        <span>Supporting habits</span>
+        ${supportHabits.length ? `<span>Supporting habits</span>` : ""}
         ${supportHabits.map((habit) => {
           const target = step.linkedHabitTarget || 7;
           const doneCount = routineProgress(habit, target);
@@ -1023,9 +1243,14 @@ function routineStepMarkup(goal, step) {
           const todayStatus = !scheduledToday ? "Not scheduled today" : doneToday ? "Done today" : "Open today";
           return `<strong>${escapeHtml(habit.name)} - ${todayStatus} | ${doneCount} / ${target} routine checks</strong>`;
         }).join("")}
+        ${supportTasks.length ? `<span>Supporting tasks</span>` : ""}
+        ${supportTasks.map((task) => `
+          <strong>${task.done ? "Cleared" : "Open"} - ${escapeHtml(task.title)}${task.deadline ? ` | ${escapeHtml(taskDeadlineLabel(task))}` : ""}</strong>
+        `).join("")}
       </div>
       <div class="routine-link-actions">
         <a class="ghost-button link-button" href="${habitLinkHref()}" data-routine-habit-link>Go to habits</a>
+        <a class="ghost-button link-button" href="${taskLinkHref()}" data-routine-task-link>Go to tasks</a>
       </div>
     </div>
   `;
@@ -1298,33 +1523,86 @@ function renderTaskHabitOptions() {
   });
 }
 
+function renderTaskGoalOptions() {
+  document.querySelectorAll("[data-task-goal-support]").forEach((select) => {
+    const previous = select.value;
+    const support = parseGoalStepValue(previous);
+    select.innerHTML = goalStepSelectMarkup(support.goalId, support.stepId);
+    select.value = support.goalId && support.stepId ? `${support.goalId}:${support.stepId}` : "";
+  });
+}
+
 function renderTasks() {
   document.querySelectorAll("[data-task-list]").forEach((list) => {
     list.innerHTML = "";
-    state.tasks.forEach((task) => list.append(taskRow(task)));
+    [...state.tasks]
+      .sort((a, b) => {
+        const overdueDelta = Number(isTaskOverdue(b)) - Number(isTaskOverdue(a));
+        if (overdueDelta) return overdueDelta;
+        if (a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
+        if (a.deadline) return -1;
+        if (b.deadline) return 1;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      })
+      .forEach((task) => list.append(taskRow(task)));
   });
   renderTaskHabitOptions();
+  renderTaskGoalOptions();
   toggleEmpty("tasks", state.tasks.length === 0);
+}
+
+function isTaskOverdue(task) {
+  return Boolean(task.deadline && !task.done && task.deadline < todayKey());
+}
+
+function taskDeadlineLabel(task) {
+  if (!task.deadline) return "No deadline";
+  if (isTaskOverdue(task)) return `Overdue - due ${formatDisplayDate(task.deadline)}`;
+  if (task.deadline === todayKey()) return "Due today";
+  return `Due ${formatDisplayDate(task.deadline)}`;
+}
+
+function taskSupportLabel(task) {
+  const { goal, step } = findGoalStep(task.supportedGoalId, task.supportedStepId);
+  if (!goal || !step) return "";
+  return `Supports ${goal.title}: ${step.text}`;
 }
 
 function taskRow(task) {
   const row = document.createElement("div");
   const habit = findHabitById(task.linkedHabitId);
-  row.className = `task-row ${task.done ? "is-done" : ""}`;
+  const supportLabel = taskSupportLabel(task);
+  row.className = `task-row ${task.done ? "is-done" : ""} ${isTaskOverdue(task) ? "is-overdue" : ""}`;
+  if (editingTaskId === task.id) {
+    row.classList.add("is-editing-item");
+    row.innerHTML = taskEditMarkup(task);
+    bindTaskEditControls(row, task);
+    return row;
+  }
   row.innerHTML = `
     <div class="task-status-orb" aria-hidden="true">${task.done ? "✓" : ""}</div>
     <div class="task-copy">
       <strong>${escapeHtml(task.title)}</strong>
       ${task.subtext ? `<p>${escapeHtml(task.subtext)}</p>` : ""}
-      <span>${habit ? `Linked habit: ${escapeHtml(habit.name)}` : "Not linked to a habit"}</span>
+      <div class="task-meta-strip">
+        <span class="${isTaskOverdue(task) ? "is-overdue-meta" : ""}">${escapeHtml(taskDeadlineLabel(task))}</span>
+        <span>${task.taskType === "habit" ? "Habit-linked task" : "One-off task"}</span>
+        <span>${habit ? `Linked habit: ${escapeHtml(habit.name)}` : "Not linked to a habit"}</span>
+      </div>
+      ${supportLabel ? `<span class="task-goal-support">${escapeHtml(supportLabel)}</span>` : ""}
     </div>
     <div class="task-actions">
+      <button class="ghost-button edit-item-button" type="button" data-edit-task="${task.id}">Edit</button>
       <button class="daily-done-button ${task.done ? "is-done" : ""}" type="button" data-toggle-task="${task.id}">
         ${task.done ? "Mark open" : "Mark done"}
       </button>
       <button class="delete-button" type="button" data-delete-task="${task.id}">Delete</button>
     </div>
   `;
+  row.querySelector("[data-edit-task]")?.addEventListener("click", () => {
+    editingTaskId = task.id;
+    render();
+  });
   row.querySelector("[data-toggle-task]")?.addEventListener("click", () => {
     const match = state.tasks.find((item) => item.id === task.id);
     if (match) {
@@ -1348,16 +1626,101 @@ function taskRow(task) {
   return row;
 }
 
-function linkedTaskMarkup(habit) {
-  const tasks = tasksForHabit(habit.id);
+function taskEditMarkup(task) {
+  return `
+    <form class="edit-card-form task-edit-form" data-task-edit-form="${task.id}">
+      <div class="edit-form-heading">
+        <div>
+          <p class="eyebrow">Edit task</p>
+          <h3>${escapeHtml(task.title)}</h3>
+        </div>
+        <div class="edit-form-actions">
+          <button class="text-button" type="submit">Save</button>
+          <button class="ghost-button" type="button" data-cancel-task-edit>Cancel</button>
+          <button class="delete-button" type="button" data-delete-task="${task.id}">Delete</button>
+        </div>
+      </div>
+      <label>
+        Task title
+        <input name="title" type="text" value="${escapeHtml(task.title)}" required>
+      </label>
+      <label>
+        Optional details
+        <textarea name="subtext" rows="3">${escapeHtml(task.subtext)}</textarea>
+      </label>
+      <label>
+        Deadline
+        <input name="deadline" type="date" value="${escapeHtml(task.deadline)}">
+      </label>
+      <label>
+        Task type
+        <select name="taskType">${taskTypeOptionsMarkup(task.taskType)}</select>
+      </label>
+      <label>
+        Link to habit
+        <select name="linkedHabitId">${taskHabitOptionsMarkup(task.linkedHabitId)}</select>
+      </label>
+      <label>
+        Supports goal step
+        <select name="supportedStepKey">${goalStepSelectMarkup(task.supportedGoalId, task.supportedStepId)}</select>
+      </label>
+    </form>
+  `;
+}
+
+function bindTaskEditControls(row, task) {
+  const form = row.querySelector("[data-task-edit-form]");
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const linkedHabit = findHabitById(data.get("linkedHabitId"));
+    const support = parseGoalStepValue(data.get("supportedStepKey"));
+    const deadline = dateFromValue(data.get("deadline"));
+    task.title = String(data.get("title") || "").trim() || task.title;
+    task.subtext = String(data.get("subtext") || "").trim();
+    task.deadline = deadline ? dateToValue(deadline) : "";
+    task.taskType = data.get("taskType") === "habit" ? "habit" : "task";
+    task.linkedHabitId = linkedHabit ? linkedHabit.id : "";
+    task.supportedGoalId = support.goalId;
+    task.supportedStepId = support.stepId;
+    editingTaskId = "";
+    saveAndRender();
+  });
+  row.querySelector("[data-cancel-task-edit]")?.addEventListener("click", () => {
+    editingTaskId = "";
+    render();
+  });
+  row.querySelector("[data-delete-task]")?.addEventListener("click", () => {
+    openDeleteConfirm({
+      eyebrow: "Confirm delete",
+      title: "Delete task?",
+      copy: `This will delete "${task.title}" from your task board.`,
+      confirmLabel: "Delete task",
+      onConfirm: () => {
+        state.tasks = state.tasks.filter((item) => item.id !== task.id);
+        editingTaskId = "";
+        saveAndRender();
+      }
+    });
+  });
+}
+
+function linkedTaskMarkup(habit, key = selectedHabitDate()) {
+  const tasks = tasksForHabit(habit.id, key);
   if (!tasks.length) return "";
   return `
     <div class="habit-linked-tasks">
-      <span>Linked tasks</span>
+      <span>Linked tasks due ${formatDisplayDate(key)}</span>
       ${tasks.map((task) => `
-        <div class="habit-linked-task ${task.done ? "is-done" : ""}">
-          <strong>${escapeHtml(task.title)}</strong>
-          ${task.subtext ? `<p>${escapeHtml(task.subtext)}</p>` : ""}
+        <div class="habit-linked-task ${task.done ? "is-done" : ""} ${isTaskOverdue(task) ? "is-overdue" : ""}">
+          <div>
+            <strong>${escapeHtml(task.title)}</strong>
+            ${task.subtext ? `<p>${escapeHtml(task.subtext)}</p>` : ""}
+            <small>${task.done ? "Completed" : isTaskOverdue(task) ? "Overdue on this date" : "Attached to this habit"}</small>
+          </div>
+          <button class="daily-done-button linked-task-toggle ${task.done ? "is-done" : ""}" type="button" data-toggle-linked-task="${task.id}">
+            ${task.done ? "Mark open" : "Mark done"}
+          </button>
         </div>
       `).join("")}
     </div>
@@ -1571,14 +1934,21 @@ function dailyHabitRow(habit, key) {
   const isReflecting = openReflectionKey === reflectionEditKey(habit.id, key);
   const canReflect = !done && (shouldShowReflection(key) || isReflecting);
   row.className = `daily-habit-row ${done ? "is-done" : ""}`;
+  if (editingHabitId === habit.id) {
+    row.classList.add("is-editing-item");
+    row.innerHTML = habitEditMarkup(habit);
+    bindHabitEditControls(row, habit);
+    return row;
+  }
   row.innerHTML = `
     <div class="daily-habit-main">
       <strong>${escapeHtml(habit.name)}</strong>
       <span>${escapeHtml(habit.category || fallbackCategory())} | ${formatHabitDay(key)} | ${escapeHtml(scheduleLabel(habit))}</span>
       ${habitSupportMarkup(habit)}
-      ${linkedTaskMarkup(habit)}
+      ${linkedTaskMarkup(habit, key)}
     </div>
     <div class="daily-habit-actions">
+      <button class="ghost-button edit-item-button" type="button" data-edit-habit="${habit.id}">Edit</button>
       <button class="daily-done-button ${done ? "is-done" : ""}" type="button" data-toggle-habit="${habit.id}" aria-pressed="${done}">
         ${done ? "Mark not done" : "Mark done"}
       </button>
@@ -1595,6 +1965,10 @@ function dailyHabitRow(habit, key) {
       </div>
     ` : ""}
   `;
+  row.querySelector("[data-edit-habit]")?.addEventListener("click", () => {
+    editingHabitId = habit.id;
+    render();
+  });
   row.querySelector("[data-toggle-habit]")?.addEventListener("click", () => {
     const match = state.habits.find((item) => item.id === habit.id);
     if (match) {
@@ -1609,6 +1983,16 @@ function dailyHabitRow(habit, key) {
     window.setTimeout(() => {
       document.querySelector(`[data-reflection-input="${habit.id}"]`)?.focus();
     }, 0);
+  });
+  row.querySelectorAll("[data-toggle-linked-task]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const task = state.tasks.find((item) => item.id === button.dataset.toggleLinkedTask);
+      if (task) {
+        task.done = !task.done;
+        task.completedAt = task.done ? new Date().toISOString() : "";
+      }
+      saveAndRender();
+    });
   });
   row.querySelector("[data-delete-habit]").addEventListener("click", () => {
     openDeleteConfirm({
@@ -1630,6 +2014,92 @@ function dailyHabitRow(habit, key) {
     saveAndRender();
   });
   return row;
+}
+
+function habitEditMarkup(habit) {
+  return `
+    <form class="edit-card-form habit-edit-form" data-habit-edit-form="${habit.id}">
+      <div class="edit-form-heading">
+        <div>
+          <p class="eyebrow">Edit habit</p>
+          <h3>${escapeHtml(habit.name)}</h3>
+        </div>
+        <div class="edit-form-actions">
+          <button class="text-button" type="submit">Save</button>
+          <button class="ghost-button" type="button" data-cancel-habit-edit>Cancel</button>
+          <button class="delete-button" type="button" data-delete-habit="${habit.id}">Delete</button>
+        </div>
+      </div>
+      <label>
+        Habit name
+        <input name="name" type="text" value="${escapeHtml(habit.name)}" required>
+      </label>
+      <label>
+        Category
+        <select name="category">${categoryOptionsMarkup(habit.category)}</select>
+      </label>
+      <div class="weekday-field">
+        <div class="weekday-field-head">
+          <strong>Repeat on</strong>
+          <small>Only selected days will show this habit in the daily checklist.</small>
+        </div>
+        <div class="weekday-picker" data-edit-weekday-picker>${scheduleDayChoicesMarkup(habit.scheduleDays)}</div>
+      </div>
+      <label class="goal-support-field">
+        Supports goal step
+        <select name="supportedStepKey">${goalStepSelectMarkup(habit.supportedGoalId, habit.supportedStepId)}</select>
+        <small>Optional. Use this when the habit supports a specific micro step.</small>
+      </label>
+    </form>
+  `;
+}
+
+function bindHabitEditControls(row, habit) {
+  const form = row.querySelector("[data-habit-edit-form]");
+  let selectedDays = normalizeScheduleDays(habit.scheduleDays);
+  const renderLocalDays = () => {
+    const picker = row.querySelector("[data-edit-weekday-picker]");
+    if (!picker) return;
+    picker.innerHTML = scheduleDayChoicesMarkup(selectedDays);
+  };
+  row.addEventListener("click", (event) => {
+    const weekday = event.target.closest("[data-edit-weekday]");
+    if (!weekday) return;
+    const day = Number(weekday.dataset.editWeekday);
+    const next = selectedDays.includes(day) ? selectedDays.filter((item) => item !== day) : [...selectedDays, day];
+    selectedDays = normalizeScheduleDays(next.length ? next : selectedDays);
+    renderLocalDays();
+  });
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const support = parseGoalStepValue(data.get("supportedStepKey"));
+    habit.name = String(data.get("name") || "").trim() || habit.name;
+    habit.category = String(data.get("category") || fallbackCategory());
+    habit.scheduleDays = normalizeScheduleDays(selectedDays);
+    habit.weeklyGoal = habit.scheduleDays.length;
+    habit.supportedGoalId = support.goalId;
+    habit.supportedStepId = support.stepId;
+    editingHabitId = "";
+    saveAndRender();
+  });
+  row.querySelector("[data-cancel-habit-edit]")?.addEventListener("click", () => {
+    editingHabitId = "";
+    render();
+  });
+  row.querySelector("[data-delete-habit]")?.addEventListener("click", () => {
+    openDeleteConfirm({
+      eyebrow: "Confirm delete",
+      title: "Delete habit?",
+      copy: `This will delete "${habit.name}" and its daily check history. Any goal steps linked to it will show a missing routine link.`,
+      confirmLabel: "Delete habit",
+      onConfirm: () => {
+        state.habits = state.habits.filter((item) => item.id !== habit.id);
+        editingHabitId = "";
+        saveAndRender();
+      }
+    });
+  });
 }
 
 function habitSupportMarkup(habit) {
@@ -2484,8 +2954,19 @@ function bindForms() {
     taskForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const form = new FormData(taskForm);
-      state.tasks.push(makeTask(form.get("title"), form.get("subtext"), form.get("linkedHabitId")));
+      const support = parseGoalStepValue(form.get("supportedStepKey"));
+      state.tasks.push(makeTask(
+        form.get("title"),
+        form.get("subtext"),
+        form.get("linkedHabitId"),
+        form.get("deadline"),
+        support.goalId,
+        support.stepId,
+        form.get("taskType")
+      ));
       taskForm.reset();
+      renderTaskHabitOptions();
+      renderTaskGoalOptions();
       saveAndRender();
       taskForm.querySelector("input, textarea, select")?.focus();
     });
@@ -2678,12 +3159,12 @@ function bindScrollNav() {
       const sectionCenter = rect.top + rect.height / 2;
       const distance = Math.max(-1, Math.min(1, (sectionCenter - viewportCenter) / window.innerHeight));
       const intensity = Math.abs(distance);
-      section.style.setProperty("--section-depth", `${Math.round(-170 * intensity)}px`);
-      section.style.setProperty("--section-shift", `${Math.round(distance * 46)}px`);
-      section.style.setProperty("--section-tilt", `${(distance * -8.5).toFixed(2)}deg`);
-      section.style.setProperty("--section-scale", (1 - intensity * 0.055).toFixed(3));
-      section.style.setProperty("--section-opacity", (1 - intensity * 0.2).toFixed(3));
-      section.style.setProperty("--section-saturation", (1 + (1 - intensity) * 0.38).toFixed(3));
+      section.style.setProperty("--section-depth", `${Math.round(-72 * intensity)}px`);
+      section.style.setProperty("--section-shift", `${Math.round(distance * 18)}px`);
+      section.style.setProperty("--section-tilt", `${(distance * -3.2).toFixed(2)}deg`);
+      section.style.setProperty("--section-scale", (1 - intensity * 0.022).toFixed(3));
+      section.style.setProperty("--section-opacity", (1 - intensity * 0.08).toFixed(3));
+      section.style.setProperty("--section-saturation", (1 + (1 - intensity) * 0.16).toFixed(3));
     });
   };
   const updateActive = () => {

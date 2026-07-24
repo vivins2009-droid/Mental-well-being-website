@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tasks | Plan Well</title>
-  <link rel="stylesheet" href="styles.css?v=habit-schedules">
+  <link rel="stylesheet" href="styles.css?v=task-deadlines">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="app.js?v=habit-schedules" defer></script>
+  <script src="app.js?v=task-deadlines" defer></script>
 </head>
 <body data-page="tasks">
   <div class="app-shell">
@@ -100,16 +100,34 @@
           </div>
           <p class="form-guidance">Add homework, chores, errands, or any one-off task.</p>
           <form class="entry-form task-entry-form" data-task-form>
-            <p class="task-link-guidance full-width">Linking a task to a habit is optional. Use it only when the task belongs to a daily routine.</p>
+            <p class="task-link-guidance full-width">Deadlines decide where a linked task appears. Linking to a habit is optional, and works best when the task belongs to a daily routine.</p>
             <label>
               Task title
               <input name="title" type="text" placeholder="Example: Physics homework" required>
+            </label>
+            <label>
+              Deadline
+              <input name="deadline" type="date" aria-label="Task deadline">
+            </label>
+            <label>
+              Task type
+              <select name="taskType" aria-label="Task type">
+                <option value="task">One-off task</option>
+                <option value="habit">Habit-linked task</option>
+              </select>
             </label>
             <label>
               Link to habit
               <select name="linkedHabitId" data-habit-link-select aria-label="Link task to habit">
                 <option value="">No linked habit</option>
               </select>
+            </label>
+            <label>
+              Supports goal step
+              <select name="supportedStepKey" data-task-goal-support aria-label="Link task to goal step">
+                <option value="">No goal step selected</option>
+              </select>
+              <small>Optional. Use this for goal steps that are better completed as one-off tasks.</small>
             </label>
             <label class="full-width">
               Optional details

@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plan well | Teen Progress Tracker</title>
-  <link rel="stylesheet" href="styles.css?v=habit-schedules">
+  <link rel="stylesheet" href="styles.css?v=task-deadlines">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="app.js?v=habit-schedules" defer></script>
+  <script src="app.js?v=task-deadlines" defer></script>
 </head>
 <body data-page="dashboard">
   <div class="app-shell">
@@ -502,9 +502,21 @@
               </div>
             </div>
             <form class="entry-form task-entry-form" data-task-form>
+              <p class="task-link-guidance full-width">Deadlines decide where a linked task appears. Link to a habit only when the task belongs under that routine.</p>
               <label>
                 Task title
                 <input name="title" type="text" placeholder="Example: Physics homework" required>
+              </label>
+              <label>
+                Deadline
+                <input name="deadline" type="date" aria-label="Task deadline">
+              </label>
+              <label>
+                Task type
+                <select name="taskType" aria-label="Task type">
+                  <option value="task">One-off task</option>
+                  <option value="habit">Habit-linked task</option>
+                </select>
               </label>
               <label>
                 Optional details
@@ -516,6 +528,13 @@
                   <option value="">No linked habit</option>
                 </select>
                 <small>Use this only when a task belongs to a routine, like homework inside a daily study habit.</small>
+              </label>
+              <label>
+                Supports goal step
+                <select name="supportedStepKey" data-task-goal-support aria-label="Link task to goal step">
+                  <option value="">No goal step selected</option>
+                </select>
+                <small>Optional. Use this for micro steps that are better handled as a task.</small>
               </label>
               <button class="text-button" type="submit">Save task</button>
             </form>
