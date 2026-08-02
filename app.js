@@ -27,6 +27,11 @@ let syncStatus = "Checking account...";
 let syncTimer = 0;
 let authInitialized = false;
 
+function isLocalPreview() {
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host === "";
+}
+
 if (new URLSearchParams(window.location.search).get("reset") === "1") {
   localStorage.removeItem(STORAGE_KEY);
   window.history.replaceState({}, "", window.location.pathname);
@@ -98,6 +103,9 @@ function writeStoredState(key, payload = currentStatePayload()) {
 
 function saveState() {
   writeStoredState(currentUser ? accountCacheKey(currentUser.id) : STORAGE_KEY);
+  if (isLocalPreview()) {
+    writeStoredState(STORAGE_KEY);
+  }
   queueRemoteSave();
 }
 
@@ -145,6 +153,10 @@ function setSyncStatus(message) {
 }
 
 function queueRemoteSave() {
+  if (isLocalPreview()) {
+    setSyncStatus("Saved locally (Local Preview)");
+    return;
+  }
   if (!authInitialized || !currentUser || !supabaseClient) return;
   window.clearTimeout(syncTimer);
   setSyncStatus("Saving...");
@@ -187,6 +199,19 @@ async function bootstrapUserState(session) {
   authSession = session;
   currentUser = session?.user || null;
   window.clearTimeout(syncTimer);
+
+  if (isLocalPreview()) {
+    currentUser = {
+      id: "local-preview-user",
+      email: "local-preview@localhost",
+      user_metadata: { full_name: "Local Preview User" }
+    };
+    authSession = { user: currentUser };
+    const localSnapshot = loadState(STORAGE_KEY);
+    applyState(localSnapshot);
+    setSyncStatus("Local preview mode");
+    return;
+  }
 
   if (!currentUser) {
     applyState(createEmptyState());
@@ -237,25 +262,30 @@ async function bootstrapUserState(session) {
 }
 
 function authDisplayName() {
+  if (isLocalPreview()) return "Local Preview";
   const meta = currentUser?.user_metadata || {};
   return meta.full_name || meta.name || currentUser?.email || "Account";
 }
 
 function userEmail() {
+  if (isLocalPreview()) return "local-preview@localhost";
   return currentUser?.email || currentUser?.user_metadata?.email || "";
 }
 
 function setAuthVisibility() {
-  const isConfigured = Boolean(supabaseClient);
-  document.body.classList.toggle("is-authenticated", Boolean(currentUser));
-  document.body.classList.toggle("is-logged-out", !currentUser);
-  document.body.classList.toggle("is-auth-unconfigured", !isConfigured);
+  const isConfigured = Boolean(supabaseClient) || isLocalPreview();
+  const isAuth = Boolean(currentUser) || isLocalPreview();
+  document.body.classList.toggle("is-authenticated", isAuth);
+  document.body.classList.toggle("is-logged-out", !isAuth);
+  document.body.classList.toggle("is-auth-unconfigured", !isConfigured && !isLocalPreview());
   document.body.classList.remove("is-auth-loading");
 
   const authScreen = document.querySelector("[data-auth-screen]");
   if (authScreen) {
-    authScreen.hidden = Boolean(currentUser);
-    authScreen.querySelector("[data-auth-setup]").hidden = isConfigured;
+    authScreen.hidden = isAuth;
+    if (authScreen.querySelector("[data-auth-setup]")) {
+      authScreen.querySelector("[data-auth-setup]").hidden = isConfigured;
+    }
     authScreen.querySelectorAll("[data-auth-google], [data-auth-submit], [data-auth-magic]").forEach((control) => {
       control.disabled = !isConfigured;
     });
@@ -3235,7 +3265,9 @@ async function initializeApp() {
   bindScrollNav();
   initSupabaseClient();
 
-  if (supabaseClient) {
+  if (isLocalPreview()) {
+    await bootstrapUserState(null);
+  } else if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient.auth.getSession();
       if (error) throw error;
