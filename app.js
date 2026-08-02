@@ -18,6 +18,7 @@ let editingRoutineLinkKey = "";
 let editingGoalId = "";
 let editingHabitId = "";
 let editingTaskId = "";
+let dateDocumentListenersBound = false;
 let openReflectionKey = "";
 let supabaseClient = null;
 let authSession = null;
@@ -878,6 +879,20 @@ function taskTypeOptionsMarkup(selected = "task") {
   `;
 }
 
+function deadlineFieldMarkup({ id, value = "", required = false, label = "Deadline" }) {
+  return `
+    <div class="form-field date-field deadline-date-field ${required ? "is-required-date" : ""}" data-date-field ${required ? "data-required-date" : ""}>
+      <label for="${escapeHtml(id)}">${escapeHtml(label)}</label>
+      <button class="date-trigger" type="button" data-date-trigger aria-haspopup="dialog" aria-expanded="false" aria-describedby="${escapeHtml(id)}-hint">
+        <span class="date-value" data-date-value id="${escapeHtml(id)}-hint">Pick a deadline</span>
+        <span class="date-icon" aria-hidden="true"></span>
+      </button>
+      <input id="${escapeHtml(id)}" name="deadline" type="hidden" value="${escapeHtml(value)}" data-date-input>
+      <div class="date-popover" data-date-popover hidden role="dialog" aria-label="Choose ${escapeHtml(label.toLowerCase())}"></div>
+    </div>
+  `;
+}
+
 function createHabitFromRoutine(stepText, category) {
   const habit = makeHabit(stepText, category);
   state.habits.push(habit);
@@ -1070,10 +1085,7 @@ function goalEditMarkup(goal) {
         Area of life
         <select name="category" required>${categoryOptionsMarkup(goal.category)}</select>
       </label>
-      <label>
-        Deadline
-        <input name="deadline" type="date" value="${escapeHtml(goal.deadline)}">
-      </label>
+      ${deadlineFieldMarkup({ id: `goal-edit-deadline-${goal.id}`, value: goal.deadline })}
       <label>
         Why this matters
         <textarea name="why" rows="2">${escapeHtml(goal.why)}</textarea>
@@ -1648,10 +1660,7 @@ function taskEditMarkup(task) {
         Optional details
         <textarea name="subtext" rows="3">${escapeHtml(task.subtext)}</textarea>
       </label>
-      <label>
-        Deadline
-        <input name="deadline" type="date" value="${escapeHtml(task.deadline)}">
-      </label>
+      ${deadlineFieldMarkup({ id: `task-edit-deadline-${task.id}`, value: task.deadline, required: true })}
       <label>
         Task type
         <select name="taskType">${taskTypeOptionsMarkup(task.taskType)}</select>
@@ -1672,6 +1681,7 @@ function bindTaskEditControls(row, task) {
   const form = row.querySelector("[data-task-edit-form]");
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!requireTaskDeadline(form)) return;
     const data = new FormData(form);
     const linkedHabit = findHabitById(data.get("linkedHabitId"));
     const support = parseGoalStepValue(data.get("supportedStepKey"));
@@ -2524,13 +2534,16 @@ function syncDateHints() {
 
 function bindDateHints() {
   document.querySelectorAll("[data-date-field]").forEach((field) => {
+    if (field.dataset.dateBound === "true") return;
     const input = field.querySelector("[data-date-input]");
     const trigger = field.querySelector("[data-date-trigger]");
     const popover = field.querySelector("[data-date-popover]");
     if (!input || !trigger || !popover) return;
+    field.dataset.dateBound = "true";
 
     trigger.addEventListener("click", (event) => {
       event.stopPropagation();
+      field.classList.remove("has-date-error");
       if (field.classList.contains("is-open")) {
         closeDateCalendar(field);
       } else {
@@ -2563,6 +2576,7 @@ function bindDateHints() {
       const day = event.target.closest("[data-date-day]");
       if (!day) return;
       input.value = day.dataset.dateDay;
+      field.classList.remove("has-date-error");
       setCalendarView(field, dateFromValue(input.value) || calendarViewDate(field));
       syncDateHints();
       renderDateCalendar(field);
@@ -2570,16 +2584,31 @@ function bindDateHints() {
     });
   });
 
-  document.addEventListener("click", (event) => {
-    if (event.target.closest("[data-date-field]")) return;
-    closeAllDateCalendars();
-  });
+  if (!dateDocumentListenersBound) {
+    document.addEventListener("click", (event) => {
+      if (event.target.closest("[data-date-field]")) return;
+      closeAllDateCalendars();
+    });
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeAllDateCalendars();
-  });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeAllDateCalendars();
+    });
+    dateDocumentListenersBound = true;
+  }
 
   syncDateHints();
+}
+
+function requireTaskDeadline(form) {
+  const field = form.querySelector("[data-required-date]");
+  const input = field?.querySelector("[data-date-input]");
+  if (dateFromValue(input?.value)) return true;
+  field?.classList.add("has-date-error");
+  if (field) {
+    openDateCalendar(field);
+    field.querySelector("[data-date-trigger]")?.focus();
+  }
+  return false;
 }
 
 function microStepLinesFromTextarea(form) {
@@ -2953,6 +2982,7 @@ function bindForms() {
   document.querySelectorAll("[data-task-form]").forEach((taskForm) => {
     taskForm.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (!requireTaskDeadline(taskForm)) return;
       const form = new FormData(taskForm);
       const support = parseGoalStepValue(form.get("supportedStepKey"));
       state.tasks.push(makeTask(
@@ -2967,6 +2997,7 @@ function bindForms() {
       taskForm.reset();
       renderTaskHabitOptions();
       renderTaskGoalOptions();
+      syncDateHints();
       saveAndRender();
       taskForm.querySelector("input, textarea, select")?.focus();
     });
@@ -2989,6 +3020,8 @@ function render() {
   renderCategories();
   renderTasks();
   renderHabits();
+  bindDateHints();
+  syncDateHints();
 }
 
 function toggleEmpty(name, shouldShow) {

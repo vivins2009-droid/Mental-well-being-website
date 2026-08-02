@@ -29,7 +29,6 @@ to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
-create or replace function public.set_tracker_state_updated_at()
 returns trigger
 language plpgsql
 security definer

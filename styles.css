@@ -2005,6 +2005,20 @@ select option:hover,
   color: var(--text);
 }
 
+.date-field.has-date-error .date-trigger {
+  border-color: rgba(255, 82, 137, 0.76);
+  background:
+    radial-gradient(circle at 86% 22%, rgba(255, 82, 137, 0.18), transparent 3.5rem),
+    rgba(255, 42, 111, 0.08);
+  box-shadow:
+    inset 0 0 16px rgba(255, 82, 137, 0.12),
+    0 0 24px rgba(255, 42, 111, 0.2);
+}
+
+.date-field.has-date-error .date-value {
+  color: rgba(255, 224, 234, 0.98);
+}
+
 .date-icon {
   position: relative;
   display: block;
@@ -7325,6 +7339,14 @@ body.is-logged-out .app-shell {
 .task-console-panel,
 .task-list-panel {
   min-height: 100%;
+}
+
+.task-console-panel {
+  overflow: visible;
+  z-index: 24;
+}
+
+.task-list-panel {
   overflow: hidden;
 }
 

@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plan well | Teen Progress Tracker</title>
-  <link rel="stylesheet" href="styles.css?v=task-deadlines">
+  <link rel="stylesheet" href="styles.css?v=task-calendar">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="app.js?v=task-deadlines" defer></script>
+  <script src="app.js?v=task-calendar" defer></script>
 </head>
 <body data-page="dashboard">
   <div class="app-shell">
@@ -507,10 +507,15 @@
                 Task title
                 <input name="title" type="text" placeholder="Example: Physics homework" required>
               </label>
-              <label>
-                Deadline
-                <input name="deadline" type="date" aria-label="Task deadline">
-              </label>
+              <div class="form-field date-field deadline-date-field" data-date-field data-required-date>
+                <label for="task-deadline-home">Deadline</label>
+                <button class="date-trigger" type="button" data-date-trigger aria-haspopup="dialog" aria-expanded="false" aria-describedby="task-date-hint-home">
+                  <span class="date-value" data-date-value id="task-date-hint-home">Pick a deadline</span>
+                  <span class="date-icon" aria-hidden="true"></span>
+                </button>
+                <input id="task-deadline-home" name="deadline" type="hidden" data-date-input>
+                <div class="date-popover" data-date-popover hidden role="dialog" aria-label="Choose task deadline"></div>
+              </div>
               <label>
                 Task type
                 <select name="taskType" aria-label="Task type">
