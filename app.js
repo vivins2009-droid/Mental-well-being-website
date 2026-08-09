@@ -29,7 +29,15 @@ let authInitialized = false;
 
 function isLocalPreview() {
   const host = window.location.hostname;
-  return host === "localhost" || host === "127.0.0.1" || host === "";
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host === "" ||
+    host.startsWith("192.168.") ||
+    host.startsWith("10.") ||
+    host.endsWith(".local")
+  );
 }
 
 if (new URLSearchParams(window.location.search).get("reset") === "1") {
@@ -282,7 +290,12 @@ function setAuthVisibility() {
 
   const authScreen = document.querySelector("[data-auth-screen]");
   if (authScreen) {
-    authScreen.hidden = isAuth;
+    if (isLocalPreview() || isAuth) {
+      authScreen.style.setProperty("display", "none", "important");
+      authScreen.remove();
+    } else {
+      authScreen.hidden = false;
+    }
     if (authScreen.querySelector("[data-auth-setup]")) {
       authScreen.querySelector("[data-auth-setup]").hidden = isConfigured;
     }
@@ -667,7 +680,8 @@ function totals() {
     .map((habit) => ({ name: habit.name, streak: habitStreak(habit) }))
     .sort((a, b) => b.streak - a.streak)[0] || { name: "No habits yet", streak: 0 };
   const strongestHabit = bestHabit.streak > 0 ? bestHabit.name : "None";
-  const xp = totalHabitCompletions * 10 + stepsDone * 40 + achievedGoals * 300 + tasksDone * 15;
+  const completed21DayHabits = state.habits.filter((h) => habitStreak(h) >= 21).length;
+  const xp = totalHabitCompletions * 10 + stepsDone * 40 + achievedGoals * 300 + tasksDone * 15 + completed21DayHabits * 500;
 
   return {
     achievedGoals,
@@ -3050,6 +3064,8 @@ function render() {
   renderCategories();
   renderTasks();
   renderHabits();
+  render21DayHabitsSection();
+  renderNotificationsSection();
   bindDateHints();
   syncDateHints();
 }
@@ -3215,21 +3231,6 @@ function bindScrollNav() {
     .map((link) => document.querySelector(link.getAttribute("href")))
     .filter(Boolean);
   let ticking = false;
-  const updateSectionMotion = () => {
-    const viewportCenter = window.innerHeight / 2;
-    sections.forEach((section) => {
-      const rect = section.getBoundingClientRect();
-      const sectionCenter = rect.top + rect.height / 2;
-      const distance = Math.max(-1, Math.min(1, (sectionCenter - viewportCenter) / window.innerHeight));
-      const intensity = Math.abs(distance);
-      section.style.setProperty("--section-depth", `${Math.round(-72 * intensity)}px`);
-      section.style.setProperty("--section-shift", `${Math.round(distance * 18)}px`);
-      section.style.setProperty("--section-tilt", `${(distance * -3.2).toFixed(2)}deg`);
-      section.style.setProperty("--section-scale", (1 - intensity * 0.022).toFixed(3));
-      section.style.setProperty("--section-opacity", (1 - intensity * 0.08).toFixed(3));
-      section.style.setProperty("--section-saturation", (1 + (1 - intensity) * 0.16).toFixed(3));
-    });
-  };
   const updateActive = () => {
     let current = sections[0];
     sections.forEach((section) => {
@@ -3238,7 +3239,6 @@ function bindScrollNav() {
     links.forEach((link) => {
       link.classList.toggle("active", link.getAttribute("href") === `#${current.id}`);
     });
-    updateSectionMotion();
     ticking = false;
   };
   const requestUpdate = () => {
@@ -3249,6 +3249,251 @@ function bindScrollNav() {
   window.addEventListener("scroll", requestUpdate, { passive: true });
   window.addEventListener("resize", requestUpdate);
   updateActive();
+}
+
+/* ==========================================================================
+   21-DAY HABIT PSYCHOLOGY PROTOCOL WIDGET
+   ========================================================================== */
+
+function render21DayHabitsSection() {
+  document.querySelectorAll("[data-21day-habits-container]").forEach((container) => {
+    container.innerHTML = "";
+    if (!state.habits || !state.habits.length) {
+      container.innerHTML = `<div class="empty-state compact" style="margin-top: 8px;"><strong>No active habits</strong><span>Add a habit in the Habits section to start your 21-Day Protocol!</span></div>`;
+      return;
+    }
+
+    const today = todayKey();
+    state.habits.forEach((habit) => {
+      const streak = habitStreak(habit);
+      const dayCount = Math.min(21, streak);
+      const isCompleted21 = streak >= 21;
+      const doneToday = habitDoneOn(habit, today);
+      const percent = Math.round((dayCount / 21) * 100);
+
+      const card = document.createElement("div");
+      card.className = `habit-21day-item ${isCompleted21 ? "is-mastered" : ""}`;
+      card.style.cssText = "background: rgba(0,0,0,0.3); border: 1px solid rgba(0,246,255,0.2); border-radius: 12px; padding: 12px; margin-bottom: 10px;";
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem;">${escapeHtml(habit.name)} ${isCompleted21 ? "🏆 21-Day Master" : ""}</strong>
+            <span style="display: block; font-size: 0.75rem; color: #94a3b8;">${escapeHtml(habit.category)} | 🔥 ${streak} day streak</span>
+          </div>
+          <button class="ghost-button compact-button" type="button" data-check-21day="${habit.id}" ${doneToday ? "disabled" : ""} style="font-size: 0.75rem; padding: 4px 10px;">
+            ${doneToday ? "✓ Checked Today" : "Check In"}
+          </button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden;">
+            <div style="width: ${percent}%; height: 100%; background: linear-gradient(90deg, #00e5ff, #00ffd0); transition: width 300ms ease;"></div>
+          </div>
+          <span style="font-size: 0.8rem; font-weight: bold; color: ${isCompleted21 ? "#00ffd0" : "#a8d7df"}; min-width: 65px; text-align: right;">
+            ${isCompleted21 ? "Mastered!" : `Day ${dayCount} / 21`}
+          </span>
+        </div>
+      `;
+
+      card.querySelector("[data-check-21day]")?.addEventListener("click", () => {
+        setHabitDone(habit, today, true);
+        const newStreak = habitStreak(habit);
+        if (newStreak === 21) {
+          addNotification({
+            title: `🏆 21-Day Habit Master Unlocked!`,
+            body: `Incredible! You completed 21 consecutive days of "${habit.name}"! +500 XP Boost awarded!`,
+            type: "reward"
+          });
+        } else {
+          addNotification({
+            title: `Habit Checked: ${habit.name}`,
+            body: `Streak is now ${newStreak} days! Keep it up for your 21-Day Master Badge!`,
+            type: "habit"
+          });
+        }
+        saveAndRender();
+      });
+
+      container.append(card);
+    });
+  });
+}
+
+/* ==========================================================================
+   IN-APP & OS NOTIFICATION SYSTEM
+   ========================================================================== */
+
+function addNotification({ title, body, type = "info" }) {
+  if (!state.notifications) state.notifications = [];
+  const notif = {
+    id: uid("notif"),
+    title,
+    body,
+    type,
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    read: false
+  };
+  state.notifications.unshift(notif);
+  if (state.notifications.length > 30) state.notifications.pop();
+
+  pushOSNotification(title, body);
+}
+
+function pushOSNotification(title, body) {
+  if (state.notificationSettings?.osEnabled && "Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification(title, { body, icon: "/favicon.ico" });
+    } catch (e) {
+      console.warn("OS Notification failed", e);
+    }
+  }
+}
+
+function evaluateRemindersAndDeadlines() {
+  if (!state.notifications) state.notifications = [];
+  const missedHabits = todayMissedHabits();
+  const overdueTasks = state.tasks.filter((t) => isTaskOverdue(t));
+  const dueGoals = state.goals.filter((g) => {
+    const left = daysLeft(g.deadline);
+    return left !== null && left >= 0 && left <= 2 && goalProgress(g) < 100;
+  });
+
+  const todayStr = dateToValue(new Date());
+  const lastCheck = localStorage.getItem("planwell_last_notif_check");
+  if (lastCheck === todayStr) return;
+  localStorage.setItem("planwell_last_notif_check", todayStr);
+
+  if (missedHabits.length) {
+    addNotification({
+      title: `Daily Habit Reminder ⚡`,
+      body: `You have ${missedHabits.length} habit(s) left to complete today (${missedHabits.map((h) => h.name).slice(0, 2).join(", ")}).`,
+      type: "habit"
+    });
+  }
+
+  if (overdueTasks.length) {
+    addNotification({
+      title: `Overdue Task Warning ⚠️`,
+      body: `${overdueTasks.length} task(s) are past due! (e.g. "${overdueTasks[0].title}").`,
+      type: "task"
+    });
+  }
+
+  if (dueGoals.length) {
+    addNotification({
+      title: `Goal Deadline Alert 🎯`,
+      body: `Goal "${dueGoals[0].title}" deadline is approaching within 48 hours!`,
+      type: "goal"
+    });
+  }
+}
+
+function renderNotificationsSection() {
+  const unreadCount = (state.notifications || []).filter((n) => !n.read).length;
+  document.querySelectorAll("[data-notification-count]").forEach((badge) => {
+    badge.textContent = unreadCount;
+    badge.hidden = unreadCount === 0;
+  });
+
+  document.querySelectorAll("[data-os-notif-toggle]").forEach((toggle) => {
+    toggle.checked = Boolean(state.notificationSettings?.osEnabled);
+  });
+
+  document.querySelectorAll("[data-notification-list]").forEach((container) => {
+    container.innerHTML = "";
+    if (!state.notifications || !state.notifications.length) {
+      container.innerHTML = `<div style="color: #94a3b8; font-size: 11px; text-align: center; padding: 12px;">No notifications yet.</div>`;
+      return;
+    }
+
+    state.notifications.forEach((item) => {
+      const row = document.createElement("div");
+      row.style.cssText = "padding: 8px 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; font-size: 11px; color: #cbd5e1;";
+      row.innerHTML = `
+        <div style="display: flex; justify-content: space-between; font-weight: bold; color: #00e5ff; margin-bottom: 2px;">
+          <span>${escapeHtml(item.title)}</span>
+          <small style="color: #64748b; font-weight: normal;">${escapeHtml(item.time)}</small>
+        </div>
+        <div>${escapeHtml(item.body)}</div>
+      `;
+      container.append(row);
+    });
+  });
+}
+
+function bindNotificationControls() {
+  document.querySelectorAll("[data-notification-trigger]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const drawer = btn.closest(".notification-wrapper")?.querySelector("[data-notification-drawer]");
+      if (drawer) {
+        drawer.hidden = !drawer.hidden;
+        if (!drawer.hidden && state.notifications) {
+          state.notifications.forEach((n) => (n.read = true));
+          renderNotificationsSection();
+        }
+      }
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-notification-drawer]") && !e.target.closest("[data-notification-trigger]")) {
+      document.querySelectorAll("[data-notification-drawer]").forEach((d) => (d.hidden = true));
+    }
+  });
+
+  document.querySelectorAll("[data-clear-notifications]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.notifications = [];
+      saveAndRender();
+    });
+  });
+
+  document.querySelectorAll("[data-os-notif-toggle]").forEach((toggle) => {
+    toggle.addEventListener("change", async () => {
+      if (toggle.checked) {
+        if ("Notification" in window) {
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            if (!state.notificationSettings) state.notificationSettings = {};
+            state.notificationSettings.osEnabled = true;
+            addNotification({ title: "OS Notifications Enabled 🔔", body: "You will now receive native device notifications for habits, tasks, and goal deadlines.", type: "system" });
+          } else {
+            alert("Notification permission was denied in your browser settings.");
+            toggle.checked = false;
+            if (!state.notificationSettings) state.notificationSettings = {};
+            state.notificationSettings.osEnabled = false;
+          }
+        } else {
+          alert("OS Notifications are not supported by this browser.");
+          toggle.checked = false;
+          if (!state.notificationSettings) state.notificationSettings = {};
+          state.notificationSettings.osEnabled = false;
+        }
+      } else {
+        if (!state.notificationSettings) state.notificationSettings = {};
+        state.notificationSettings.osEnabled = false;
+      }
+      saveAndRender();
+    });
+  });
+
+  document.querySelectorAll("[data-test-os-notif]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!("Notification" in window)) {
+        alert("Browser does not support OS notifications.");
+        return;
+      }
+      let perm = Notification.permission;
+      if (perm !== "granted") {
+        perm = await Notification.requestPermission();
+      }
+      if (perm === "granted") {
+        new Notification("Plan Well Alert! 🔔", { body: "Daily habits, task reminders, and goal deadline alerts are active." });
+      } else {
+        alert("Notification permission denied in browser.");
+      }
+    });
+  });
 }
 
 async function initializeApp() {
@@ -3263,6 +3508,7 @@ async function initializeApp() {
   bindLinkMotion();
   bindButtonMotion();
   bindScrollNav();
+  bindNotificationControls();
   initSupabaseClient();
 
   if (isLocalPreview()) {
@@ -3288,11 +3534,13 @@ async function initializeApp() {
   }
 
   authInitialized = true;
+  evaluateRemindersAndDeadlines();
   render();
   setAuthVisibility();
   window.setInterval(() => {
     renderTodayReadouts();
     renderEndOfDayReminders();
+    evaluateRemindersAndDeadlines();
   }, 60000);
 }
 
