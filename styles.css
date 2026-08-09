@@ -1861,6 +1861,18 @@ h2 {
   padding: 0 12px;
 }
 
+/* Force ALL select elements to use dark color scheme — prevents white OS dropdown popup */
+select {
+  color-scheme: dark;
+  background-color: #021018;
+  color: var(--text);
+}
+
+select option {
+  background-color: #021018 !important;
+  color: var(--text) !important;
+}
+
 .entry-form select,
 .routine-planner-row select,
 .routine-link-editor select {

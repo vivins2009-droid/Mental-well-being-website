@@ -2724,8 +2724,9 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
       <input type="text" data-step-text placeholder="${index === 0 ? "First milestone, like master grammar" : "Next milestone"}" value="${escapeHtml(entry.text || "")}">
     </label>
     <label>
-      Daily routine that supports it
-      <textarea data-step-routine rows="2" placeholder="Example: Practice grammar for 30 minutes after school.">${escapeHtml(entry.routineIdea || "")}</textarea>
+      Build a habit for this step <span style="font-size:0.72rem;opacity:0.6;font-weight:400;">(Optional — click to set up on the Habits page)</span>
+      <textarea data-step-routine rows="2" placeholder="Describe the routine, e.g. Practice grammar 30 min after school. Clicking here will open Habits so you can set frequency, reminders and more." readonly style="cursor:pointer;opacity:0.7;">${escapeHtml(entry.routineIdea || "")}</textarea>
+      <small style="font-size:0.7rem;opacity:0.55;margin-top:2px;display:block;">Clicking the box above will take you to the Habits page to create a full habit linked to this goal.</small>
     </label>
     <button class="ghost-button micro-step-remove" type="button" data-remove-micro-step aria-label="Remove step ${index + 1}">Remove</button>
   `;
@@ -2734,11 +2735,20 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
     event.preventDefault();
     addMicroStepRow(form, row);
   });
-  row.querySelectorAll("input, textarea").forEach((input) => {
-    input.addEventListener("input", () => {
-      syncMicroStepBackingField(form);
-      renderRoutineLinkPlanner(form);
-    });
+  // Redirect to habits page when user clicks the routine textarea
+  row.querySelector("[data-step-routine]")?.addEventListener("click", () => {
+    const goalTitleInput = form.querySelector('[name="title"]');
+    const goalTitle = goalTitleInput ? goalTitleInput.value.trim() : "";
+    const stepText = row.querySelector("[data-step-text]")?.value.trim() || "";
+    const params = new URLSearchParams();
+    if (goalTitle) params.set("linkedGoal", goalTitle);
+    if (stepText) params.set("linkedStep", stepText);
+    const base = window.location.pathname.includes("/mobile/") ? "../habits.html" : "habits.html";
+    window.location.href = `${base}?${params.toString()}`;
+  });
+  row.querySelector("[data-step-text]")?.addEventListener("input", () => {
+    syncMicroStepBackingField(form);
+    renderRoutineLinkPlanner(form);
   });
   row.querySelector("[data-remove-micro-step]")?.addEventListener("click", () => {
     const builder = form.querySelector("[data-micro-step-builder]");
@@ -3542,6 +3552,32 @@ async function initializeApp() {
     renderEndOfDayReminders();
     evaluateRemindersAndDeadlines();
   }, 60000);
+
+  // Auto-fill habit form if arriving from goal step routine click
+  const urlParams = new URLSearchParams(window.location.search);
+  const linkedGoalTitle = urlParams.get("linkedGoal");
+  const linkedStepText = urlParams.get("linkedStep");
+  if (linkedGoalTitle && document.querySelector("[data-habit-form]")) {
+    window.setTimeout(() => {
+      const habitSection = document.querySelector("[data-habit-form]")?.closest("section, article, .panel");
+      if (habitSection && !habitSection.querySelector(".linked-goal-banner")) {
+        const banner = document.createElement("div");
+        banner.className = "linked-goal-banner";
+        banner.style.cssText = "background:rgba(0,246,255,0.08);border:1px solid rgba(0,246,255,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:#a8d7df;";
+        banner.innerHTML = `<strong style="color:#00f6ff;">&#128279; Linked from goal:</strong> <em>${escapeHtml(linkedGoalTitle)}</em>${linkedStepText ? ` &mdash; step: <em>${escapeHtml(linkedStepText)}</em>` : ""}. Set the frequency, schedule and reminders below, then save.`;
+        habitSection.prepend(banner);
+      }
+      if (linkedStepText) {
+        const nameInput = document.querySelector("[data-habit-form] input[name='name'], [data-habit-form] input[name='title']");
+        if (nameInput && !nameInput.value) nameInput.value = linkedStepText;
+      }
+      const goalSelect = document.querySelector("[data-goal-step-support]");
+      if (goalSelect) {
+        const matchOption = [...goalSelect.options].find((opt) => opt.text.toLowerCase().includes(linkedGoalTitle.toLowerCase()));
+        if (matchOption) goalSelect.value = matchOption.value;
+      }
+    }, 400);
+  }
 }
 
 void initializeApp();
