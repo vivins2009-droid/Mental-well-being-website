@@ -100,27 +100,23 @@
             <span></span>
           </div>
 
-          <div class="summary-core-zone">
-            <div class="summary-reactor" data-command-ring="overallProgress" aria-hidden="true">
-              <span class="reactor-ring outer"></span>
-              <span class="reactor-ring middle"></span>
-              <span class="reactor-core"></span>
-              <strong data-metric="overallProgress">0%</strong>
+          <div class="summary-core-zone" style="display: flex; gap: 20px; align-items: center; padding: 14px 20px;">
+            <div class="summary-core-copy" style="flex: 1;">
+              <p class="eyebrow" style="font-size: 0.65rem; margin-bottom: 4px;">Overall Core</p>
+              <div style="display: flex; align-items: baseline; gap: 12px;">
+                <h2 data-metric="overallProgress" style="font-size: 2rem; margin: 0; line-height: 1;">0%</h2>
+                <div class="progress-track" style="flex: 1; height: 6px;"><span data-bar="overallProgress"></span></div>
+              </div>
             </div>
-            <div class="summary-core-copy">
-              <p class="eyebrow">Overall core</p>
-              <h2 data-metric="overallProgress">0%</h2>
-              <div class="progress-track"><span data-bar="overallProgress"></span></div>
+            <div class="summary-core-stack" style="text-align: right;">
+              <span style="font-size: 0.65rem;">Level</span>
+              <strong data-profile-level style="display: block; font-size: 1rem;">Level 1</strong>
+              <small data-profile-xp style="font-size: 0.7rem;">0 XP</small>
             </div>
-            <div class="summary-core-stack">
-              <span>Current level</span>
-              <strong data-profile-level>Level 1</strong>
-              <small data-profile-xp>0 XP</small>
-            </div>
-            <div class="summary-core-stack">
-              <span>Progress bank</span>
-              <strong data-metric="rewardProgress">0 XP earned</strong>
-              <small data-summary-reward-status>No XP yet</small>
+            <div class="summary-core-stack" style="text-align: right;">
+              <span style="font-size: 0.65rem;">Progress Bank</span>
+              <strong data-metric="rewardProgress" style="display: block; font-size: 1rem;">0 XP earned</strong>
+              <small data-summary-reward-status style="font-size: 0.7rem;">No XP yet</small>
             </div>
           </div>
 
