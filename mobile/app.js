@@ -2658,24 +2658,34 @@ function bindCyberSelects() {
       if (event.button !== 0 || event.shiftKey || event.altKey) return;
       event.preventDefault();
 
-      const existingPopover = parent.querySelector(".cyber-select-popover");
-      if (existingPopover) {
-        existingPopover.remove();
-        parent.classList.remove("has-open-cyber-select");
+      if (select.dataset.cyberOpen === "true") {
+        closeAllCyberSelects();
         select.blur();
         return;
       }
 
       closeAllCyberSelects();
 
-      parent.classList.add("has-open-cyber-select");
-      parent.closest(".panel, article, section, .entry-form")?.classList.add("has-open-cyber-select-panel");
-
       const options = [...select.options];
       if (!options.length) return;
 
+      select.dataset.cyberOpen = "true";
+      parent.classList.add("has-open-cyber-select");
+
       const popover = document.createElement("div");
       popover.className = "cyber-select-popover";
+
+      const rect = select.getBoundingClientRect();
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+
+      popover.style.cssText = `
+        position: absolute !important;
+        top: ${rect.bottom + scrollTop + 6}px !important;
+        left: ${rect.left + scrollLeft}px !important;
+        width: ${Math.max(rect.width, 220)}px !important;
+        z-index: 9999999 !important;
+      `;
 
       options.forEach((opt) => {
         const item = document.createElement("button");
@@ -2693,19 +2703,21 @@ function bindCyberSelects() {
         popover.append(item);
       });
 
-      parent.appendChild(popover);
+      document.body.appendChild(popover);
     });
   });
 
   if (!cyberSelectDocumentListenersBound) {
     document.addEventListener("click", (event) => {
-      if (event.target.closest(".cyber-select-wrapper") || event.target.tagName === "SELECT") return;
+      if (event.target.closest(".cyber-select-wrapper") || event.target.closest(".cyber-select-popover") || event.target.tagName === "SELECT") return;
       closeAllCyberSelects();
     });
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeAllCyberSelects();
     });
+
+    window.addEventListener("resize", () => closeAllCyberSelects());
     cyberSelectDocumentListenersBound = true;
   }
 }
@@ -2713,7 +2725,7 @@ function bindCyberSelects() {
 function closeAllCyberSelects() {
   document.querySelectorAll(".cyber-select-popover").forEach((p) => p.remove());
   document.querySelectorAll(".cyber-select-wrapper").forEach((w) => w.classList.remove("has-open-cyber-select"));
-  document.querySelectorAll(".has-open-cyber-select-panel").forEach((el) => el.classList.remove("has-open-cyber-select-panel"));
+  document.querySelectorAll("select[data-cyber-open]").forEach((s) => delete s.dataset.cyberOpen);
 }
 
 function requireTaskDeadline(form) {
