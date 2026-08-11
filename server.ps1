@@ -1,5 +1,6 @@
 param (
-    [int]$Port = 8080
+    [int]$Port = 8080,
+    [string]$SubFolder = ""
 )
 
 $listener = New-Object System.Net.HttpListener
@@ -29,7 +30,7 @@ $mimeTypes = @{
     ".xlsx" = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 }
 
-$root = $PSScriptRoot
+$root = if ($SubFolder) { [System.IO.Path]::Combine($PSScriptRoot, $SubFolder) } else { $PSScriptRoot }
 
 while ($listener.IsListening) {
     try {
