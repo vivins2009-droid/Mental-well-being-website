@@ -2474,15 +2474,22 @@ select option:hover,
 
 .micro-step-builder-row {
   display: grid;
-  grid-template-columns: 46px minmax(180px, 0.78fr) minmax(240px, 1.22fr) auto;
-  align-items: end;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid rgba(0, 246, 255, 0.16);
+  grid-template-columns: 46px minmax(180px, 1fr) minmax(220px, 1.25fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 246, 255, 0.18);
   border-radius: 14px;
   background:
-    linear-gradient(145deg, rgba(0, 246, 255, 0.06), rgba(0, 18, 28, 0.56)),
-    rgba(0, 246, 255, 0.035);
+    linear-gradient(145deg, rgba(0, 246, 255, 0.06), rgba(0, 18, 28, 0.58)),
+    rgba(0, 246, 255, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.micro-step-builder-row:hover {
+  border-color: rgba(0, 246, 255, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 246, 255, 0.08);
 }
 
 .micro-step-builder-index {
@@ -2496,11 +2503,118 @@ select option:hover,
   color: var(--mint);
   font-weight: 900;
   box-shadow: inset 0 0 14px rgba(0, 246, 255, 0.12);
+  margin-top: 2px;
+}
+
+.micro-step-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.micro-step-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.micro-step-label-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--mint, #00f6ff);
+  letter-spacing: 0.02em;
+}
+
+.habit-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.habit-page-link-btn {
+  background: rgba(0, 246, 255, 0.08);
+  border: 1px solid rgba(0, 246, 255, 0.3);
+  color: #00f6ff;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.habit-page-link-btn:hover {
+  background: rgba(0, 246, 255, 0.22);
+  border-color: #00f6ff;
+  box-shadow: 0 0 10px rgba(0, 246, 255, 0.35);
+}
+
+.habit-input-wrap {
+  position: relative;
+  min-height: 38px;
+}
+
+.step-routine-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(0, 18, 28, 0.7);
+  border: 1px solid rgba(0, 246, 255, 0.25);
+  color: #fff;
+  font-size: 0.85rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.step-routine-input:focus {
+  border-color: #00f6ff;
+  box-shadow: 0 0 12px rgba(0, 246, 255, 0.25);
+  outline: none;
+}
+
+.habit-removed-msg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 77, 106, 0.08);
+  border: 1px dashed rgba(255, 77, 106, 0.4);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: #ff94a4;
+}
+
+.habit-removed-msg .undo-btn {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  color: #00f6ff;
+  border-color: rgba(0, 246, 255, 0.4);
+}
+
+.habit-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.85);
+  cursor: pointer;
+  margin-top: 4px;
+  user-select: none;
+}
+
+.habit-checkbox-label input[type="checkbox"] {
+  accent-color: #00f6ff;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
 }
 
 .micro-step-builder-row label {
-  display: grid;
-  gap: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
   padding: 0;
   border: 0;
@@ -2510,14 +2624,12 @@ select option:hover,
   font-size: 0.8rem;
 }
 
-.micro-step-builder-row textarea {
-  min-height: 58px;
-}
-
 .micro-step-remove {
-  min-width: 88px;
-  min-height: 44px;
-  border-radius: 12px;
+  min-width: 80px;
+  min-height: 38px;
+  border-radius: 10px;
+  align-self: flex-start;
+  margin-top: 24px;
 }
 
 .routine-link-planner {
