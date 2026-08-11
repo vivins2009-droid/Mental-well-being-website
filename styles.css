@@ -1970,11 +1970,22 @@ select option:hover,
   z-index: 10;
 }
 
+.date-field.is-open {
+  z-index: 1000 !important;
+}
+
+.date-field.is-open .date-popover {
+  display: block !important;
+}
+
+.panel:has(.date-field.is-open),
+.command-panel:has(.date-field.is-open),
+.entry-form:has(.date-field.is-open),
 .goal-mini-console.in-page-console,
 .goal-input-bay {
   position: relative;
-  overflow: visible;
-  z-index: 30;
+  overflow: visible !important;
+  z-index: 990 !important;
 }
 
 .date-trigger {
