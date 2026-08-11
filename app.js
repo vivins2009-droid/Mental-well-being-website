@@ -28,17 +28,6 @@ let syncTimer = 0;
 let authInitialized = false;
 
 function isLocalPreview() {
-  const settings = supabaseSettings();
-  if (settings.configured) return false;
-  const urlParams = new URLSearchParams(window.location.search);
-  if (
-    urlParams.get("testAuth") === "1" ||
-    urlParams.get("showAuth") === "1" ||
-    urlParams.get("login") === "1" ||
-    localStorage.getItem("planwell_force_auth") === "1"
-  ) {
-    return false;
-  }
   const host = window.location.hostname;
   return (
     host === "localhost" ||
@@ -292,25 +281,19 @@ function userEmail() {
 }
 
 function setAuthVisibility() {
-  const isConfigured = Boolean(supabaseClient);
-  const hasGuestMode = localStorage.getItem("planwell_guest_mode") === "1";
-  const isAuth = Boolean(currentUser) || hasGuestMode;
-  
+  const isConfigured = Boolean(supabaseClient) || isLocalPreview();
+  const isAuth = Boolean(currentUser) || isLocalPreview();
   document.body.classList.toggle("is-authenticated", isAuth);
   document.body.classList.toggle("is-logged-out", !isAuth);
   document.body.classList.toggle("is-auth-unconfigured", !isConfigured && !isLocalPreview());
   document.body.classList.remove("is-auth-loading");
 
-  ensureAuthScreen();
-  bindAuthControls();
-
   const authScreen = document.querySelector("[data-auth-screen]");
   if (authScreen) {
-    if (isAuth && !window.isAuthPreviewActive) {
+    if (isLocalPreview() || isAuth) {
       authScreen.style.setProperty("display", "none", "important");
-      authScreen.hidden = true;
+      authScreen.remove();
     } else {
-      authScreen.style.setProperty("display", "grid", "important");
       authScreen.hidden = false;
     }
     if (authScreen.querySelector("[data-auth-setup]")) {
@@ -585,8 +568,8 @@ function normalizeCategories(value, options = {}) {
 }
 
 function categoryList() {
-  state.categories = normalizeCategories(state.categories, { allowEmpty: false });
-  return state.categories.length ? state.categories : [...DEFAULT_CATEGORIES];
+  state.categories = normalizeCategories(state.categories, { allowEmpty: true });
+  return state.categories;
 }
 
 function fallbackCategory() {
@@ -986,11 +969,11 @@ function routineProgress(habit, target = 7) {
 }
 
 function habitLinkHref() {
-  return document.body.dataset.page === "dashboard" ? "#habits-section" : "habits.html";
+  return "habits.html";
 }
 
 function taskLinkHref() {
-  return document.body.dataset.page === "dashboard" ? "#tasks-section" : "tasks.html";
+  return "tasks.html";
 }
 
 function habitOptionsMarkup(selectedId = "") {
@@ -2203,50 +2186,14 @@ function renderStreaks() {
   toggleEmpty("streaks", state.habits.length === 0);
 }
 
-function render() {
-  syncMetrics();
-  renderCategories();
-  renderGoals();
-  renderHabits();
-  renderTasks();
-  render21DayHabitsSection();
-  renderNotificationsSection();
-  renderTodayReadouts();
-  bindDateHints();
-  enhanceCustomSelects();
-}
-
-function saveAndRender() {
-  saveState(state);
-  render();
-}
-
 function renderTodayReadouts() {
-  const d = new Date();
-  const dayName = d.toLocaleDateString(undefined, { weekday: "long" });
-  const dayNum = d.getDate();
-  const monthName = d.toLocaleDateString(undefined, { month: "short" });
-  const year = d.getFullYear();
-  const fullDateStr = `${dayName}, ${dayNum} ${monthName} ${year}`;
-  const liveTimeStr = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
-
   document.querySelectorAll("[data-today-readout]").forEach((readout) => {
-    readout.innerHTML = `<span>${fullDateStr}</span><strong>${liveTimeStr}</strong>`;
+    readout.innerHTML = `<span>Today</span><strong>${formatTodayReadout()}</strong><small>${formatCurrentTimeReadout()}</small>`;
   });
-}
-
-function formatTodayReadout() {
-  return new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
 function formatCurrentTimeReadout() {
   return new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", renderTodayReadouts);
-} else {
-  renderTodayReadouts();
 }
 
 function ensureAuthScreen() {
@@ -2277,15 +2224,7 @@ function ensureAuthScreen() {
         <span>This is a setup notice, not a website bug. Add your Supabase project URL and anon key in <code>supabase-config.js</code>, then run <code>supabase/schema.sql</code> in Supabase.</span>
       </div>
 
-      <button class="auth-provider-button" type="button" data-auth-google style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; padding: 12px 20px; font-size: 0.95rem; font-weight: 700; background: linear-gradient(135deg, rgba(0, 246, 255, 0.15), rgba(0, 18, 28, 0.85)); border: 1px solid rgba(0, 246, 255, 0.4); border-radius: 12px; color: #fff; box-shadow: 0 0 16px rgba(0,246,255,0.25);">
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
-        <span>Continue with Google</span>
-      </button>
+      <button class="auth-provider-button" type="button" data-auth-google>Continue with Google</button>
 
       <form class="auth-form" data-auth-email-form>
         <label>
@@ -2303,21 +2242,9 @@ function ensureAuthScreen() {
       </form>
 
       <p class="auth-status" data-auth-status aria-live="polite"></p>
-      <button class="ghost-button compact-button" type="button" data-guest-bypass style="margin-top: 6px; font-size: 0.82rem; border-color: rgba(0,246,255,0.35); color: #00f6ff; width: 100%;">Explore Dashboard (Guest Mode)</button>
     </article>
   `;
   document.body.prepend(screen);
-}
-
-function openAuthScreen() {
-  window.isAuthPreviewActive = true;
-  ensureAuthScreen();
-  bindAuthControls();
-  const screen = document.querySelector("[data-auth-screen]");
-  if (screen) {
-    screen.style.setProperty("display", "grid", "important");
-    screen.hidden = false;
-  }
 }
 
 function bindAuthControls() {
@@ -2325,15 +2252,6 @@ function bindAuthControls() {
   if (!screen || screen.dataset.bound === "1") return;
   screen.dataset.bound = "1";
   let mode = "login";
-
-  screen.querySelector("[data-guest-bypass]")?.addEventListener("click", () => {
-    localStorage.setItem("planwell_guest_mode", "1");
-    window.isAuthPreviewActive = false;
-    if (!currentUser) {
-      currentUser = { id: "local-guest", email: "guest@localhost", user_metadata: { full_name: "Local Guest" } };
-    }
-    setAuthVisibility();
-  });
 
   const setMode = (nextMode) => {
     mode = nextMode;
@@ -2441,7 +2359,6 @@ function renderAccountControls() {
         <span>${escapeHtml(userEmail() || "Signed in")}</span>
         <em data-sync-status>${escapeHtml(syncStatus)}</em>
       </div>
-      <button class="text-button compact-button" type="button" data-open-auth-screen style="width: 100%; margin-bottom: 8px; font-size: 0.78rem;">Log in / Sign in with Google</button>
       <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
     </div>
   `;
@@ -2464,8 +2381,6 @@ function renderAccountControls() {
       confirmLabel: "Log out",
       onConfirm: async () => {
         if (supabaseClient) await supabaseClient.auth.signOut();
-        localStorage.removeItem("planwell_guest_mode");
-        window.isAuthPreviewActive = false;
         authSession = null;
         currentUser = null;
         applyState(createEmptyState());
@@ -2477,11 +2392,6 @@ function renderAccountControls() {
 }
 
 document.addEventListener("click", (event) => {
-  if (event.target.closest("[data-open-auth-screen], [data-trigger-auth-preview], .mobile-login-btn, [data-auth-google-trigger]")) {
-    event.preventDefault();
-    openAuthScreen();
-    return;
-  }
   if (event.target.closest("[data-account-chip]")) return;
   document.querySelectorAll("[data-profile-menu]").forEach((menu) => {
     menu.hidden = true;
@@ -2516,7 +2426,11 @@ function renderEndOfDayReminders() {
 
     panel.querySelector("[data-review-habits]")?.addEventListener("click", () => {
       const target = document.querySelector("#habits-section") || document.querySelector("[data-habit-table]");
-      target?.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "start" });
+      if (target) {
+        target.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "start" });
+      } else {
+        window.location.href = "habits.html";
+      }
     });
     panel.querySelector("[data-dismiss-reminder]")?.addEventListener("click", () => {
       localStorage.setItem(reminderStorageKey(key), "1");
@@ -2595,20 +2509,9 @@ function setCalendarView(field, date) {
 function closeDateCalendar(field) {
   const popover = field.querySelector("[data-date-popover]");
   const trigger = field.querySelector("[data-date-trigger]");
-  if (popover) {
-    popover.hidden = true;
-    popover.style.display = "none";
-  }
+  if (popover) popover.hidden = true;
   if (trigger) trigger.setAttribute("aria-expanded", "false");
   field.classList.remove("is-open");
-
-  let parent = field.parentElement;
-  while (parent && parent !== document.body) {
-    if (parent.classList.contains("has-open-popover")) {
-      parent.classList.remove("has-open-popover");
-    }
-    parent = parent.parentElement;
-  }
 }
 
 function closeAllDateCalendars(exceptField = null) {
@@ -2664,17 +2567,8 @@ function openDateCalendar(field) {
   setCalendarView(field, calendarViewDate(field));
   renderDateCalendar(field);
   popover.hidden = false;
-  popover.style.display = "block";
   trigger.setAttribute("aria-expanded", "true");
   field.classList.add("is-open");
-
-  let parent = field.parentElement;
-  while (parent && parent !== document.body) {
-    if (parent.classList.contains("panel") || parent.classList.contains("command-panel") || parent.classList.contains("entry-form") || parent.tagName === "FORM") {
-      parent.classList.add("has-open-popover");
-    }
-    parent = parent.parentElement;
-  }
 }
 
 function syncDateHints() {
@@ -2687,186 +2581,71 @@ function syncDateHints() {
 }
 
 function bindDateHints() {
-  if (!dateDocumentListenersBound) {
-    document.addEventListener("click", (event) => {
-      const popoverNav = event.target.closest("[data-date-nav]");
-      const popoverDay = event.target.closest("[data-date-day]");
-      const trigger = event.target.closest("[data-date-trigger]") || event.target.closest(".date-trigger");
-      const field = event.target.closest("[data-date-field]") || (trigger?.closest(".date-field"));
+  document.querySelectorAll("[data-date-field]").forEach((field) => {
+    if (field.dataset.dateBound === "true") return;
+    const input = field.querySelector("[data-date-input]");
+    const trigger = field.querySelector("[data-date-trigger]");
+    const popover = field.querySelector("[data-date-popover]");
+    if (!input || !trigger || !popover) return;
+    field.dataset.dateBound = "true";
 
-      if (popoverNav && field) {
-        event.preventDefault();
-        event.stopPropagation();
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      field.classList.remove("has-date-error");
+      if (field.classList.contains("is-open")) {
+        closeDateCalendar(field);
+      } else {
+        openDateCalendar(field);
+      }
+    });
+
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.stopPropagation();
+      openDateCalendar(field);
+    });
+
+    popover.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const nav = event.target.closest("[data-date-nav]");
+      if (nav) {
         const view = calendarViewDate(field);
-        view.setMonth(view.getMonth() + Number(popoverNav.dataset.dateNav));
+        view.setMonth(view.getMonth() + Number(nav.dataset.dateNav));
         setCalendarView(field, view);
         renderDateCalendar(field);
-        const popover = field.querySelector("[data-date-popover]");
-        if (popover) {
-          popover.hidden = false;
-          popover.style.display = "block";
-        }
+        popover.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
         field.classList.add("is-open");
         return;
       }
 
-      if (popoverDay && field) {
-        event.preventDefault();
-        event.stopPropagation();
-        const input = field.querySelector("[data-date-input]");
-        if (input) {
-          input.value = popoverDay.dataset.dateDay;
-          field.classList.remove("has-date-error");
-          setCalendarView(field, dateFromValue(input.value) || calendarViewDate(field));
-          syncDateHints();
-          renderDateCalendar(field);
-          closeDateCalendar(field);
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        return;
-      }
+      const day = event.target.closest("[data-date-day]");
+      if (!day) return;
+      input.value = day.dataset.dateDay;
+      field.classList.remove("has-date-error");
+      setCalendarView(field, dateFromValue(input.value) || calendarViewDate(field));
+      syncDateHints();
+      renderDateCalendar(field);
+      closeDateCalendar(field);
+    });
+  });
 
-      if (event.target.closest("[data-date-popover]")) {
-        event.stopPropagation();
-        return;
-      }
-
-      if (field) {
-        event.preventDefault();
-        event.stopPropagation();
-        field.classList.remove("has-date-error");
-        if (field.classList.contains("is-open")) {
-          closeDateCalendar(field);
-        } else {
-          openDateCalendar(field);
-        }
-        return;
-      }
-
+  if (!dateDocumentListenersBound) {
+    document.addEventListener("click", (event) => {
+      if (event.target.closest("[data-date-field]")) return;
       closeAllDateCalendars();
     });
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeAllDateCalendars();
     });
-
     dateDocumentListenersBound = true;
   }
 
   syncDateHints();
 }
-
-function enhanceCustomSelects() {
-  document.querySelectorAll("form select, .custom-select-target").forEach((select) => {
-    if (select.dataset.customSelectInit === "true" || select.dataset.noCustomSelect === "true") return;
-    select.dataset.customSelectInit = "true";
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "custom-select-wrapper";
-    select.parentNode.insertBefore(wrapper, select);
-    wrapper.appendChild(select);
-    select.style.display = "none";
-
-    const trigger = document.createElement("button");
-    trigger.type = "button";
-    trigger.className = "custom-select-trigger";
-    trigger.setAttribute("aria-haspopup", "listbox");
-    trigger.setAttribute("aria-expanded", "false");
-
-    const textSpan = document.createElement("span");
-    textSpan.className = "custom-select-text";
-
-    const arrowSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    arrowSvg.setAttribute("class", "custom-select-arrow");
-    arrowSvg.setAttribute("width", "14");
-    arrowSvg.setAttribute("height", "14");
-    arrowSvg.setAttribute("viewBox", "0 0 24 24");
-    arrowSvg.setAttribute("fill", "none");
-    arrowSvg.setAttribute("stroke", "#00f6ff");
-    arrowSvg.setAttribute("stroke-width", "2.5");
-    arrowSvg.setAttribute("stroke-linecap", "round");
-    arrowSvg.setAttribute("stroke-linejoin", "round");
-    arrowSvg.innerHTML = `<polyline points="6 9 12 15 18 9"></polyline>`;
-
-    trigger.appendChild(textSpan);
-    trigger.appendChild(arrowSvg);
-    wrapper.appendChild(trigger);
-
-    const dropdown = document.createElement("div");
-    dropdown.className = "custom-select-dropdown";
-    dropdown.hidden = true;
-    wrapper.appendChild(dropdown);
-
-    const syncOptions = () => {
-      const selectedOption = select.options[select.selectedIndex];
-      textSpan.textContent = selectedOption ? selectedOption.text : "Select option";
-      
-      dropdown.innerHTML = "";
-      Array.from(select.options).forEach((opt, idx) => {
-        const item = document.createElement("div");
-        item.className = `custom-select-option ${idx === select.selectedIndex ? "is-selected" : ""}`;
-        item.textContent = opt.text;
-        item.dataset.value = opt.value;
-        item.addEventListener("click", (e) => {
-          e.stopPropagation();
-          select.selectedIndex = idx;
-          select.value = opt.value;
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-          syncOptions();
-          closeDropdown();
-        });
-        dropdown.appendChild(item);
-      });
-    };
-
-    const openDropdown = () => {
-      document.querySelectorAll(".custom-select-wrapper.is-open").forEach((w) => {
-        if (w !== wrapper) {
-          w.classList.remove("is-open");
-          const d = w.querySelector(".custom-select-dropdown");
-          const t = w.querySelector(".custom-select-trigger");
-          if (d) d.hidden = true;
-          if (t) t.setAttribute("aria-expanded", "false");
-        }
-      });
-      syncOptions();
-      dropdown.hidden = false;
-      trigger.setAttribute("aria-expanded", "true");
-      wrapper.classList.add("is-open");
-    };
-
-    const closeDropdown = () => {
-      dropdown.hidden = true;
-      trigger.setAttribute("aria-expanded", "false");
-      wrapper.classList.remove("is-open");
-    };
-
-    trigger.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (wrapper.classList.contains("is-open")) {
-        closeDropdown();
-      } else {
-        openDropdown();
-      }
-    });
-
-    select.addEventListener("change", syncOptions);
-    syncOptions();
-  });
-}
-
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".custom-select-wrapper")) {
-    document.querySelectorAll(".custom-select-wrapper.is-open").forEach((w) => {
-      w.classList.remove("is-open");
-      const d = w.querySelector(".custom-select-dropdown");
-      const t = w.querySelector(".custom-select-trigger");
-      if (d) d.hidden = true;
-      if (t) t.setAttribute("aria-expanded", "false");
-    });
-  }
-});
 
 function requireTaskDeadline(form) {
   const field = form.querySelector("[data-required-date]");
@@ -2942,20 +2721,17 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
   const row = document.createElement("div");
   row.className = "micro-step-builder-row";
   row.dataset.microStepRow = "";
-  const routineVal = escapeHtml(entry.routineIdea || "");
   row.innerHTML = `
     <div class="micro-step-builder-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</div>
-    <label class="micro-step-title-field">
-      <span class="field-label">Step ${index + 1}</span>
+    <label>
+      Step ${index + 1}
       <input type="text" data-step-text placeholder="${index === 0 ? "First milestone, like master grammar" : "Next milestone"}" value="${escapeHtml(entry.text || "")}">
     </label>
-    <div class="micro-step-habit-field">
-      <span class="field-label">Habit link <small style="font-weight:normal;opacity:0.65;margin-left:2px;">(Optional)</small></span>
-      <input type="hidden" data-step-routine value="${routineVal}">
-      <button type="button" class="micro-step-habit-btn" data-step-routine-btn title="Click to set up a habit for this step on Habits page">
-        ${entry.routineIdea ? `Linked: ${routineVal}` : `+ Build Habit for Step`}
-      </button>
-    </div>
+    <label>
+      Build a habit for this step <span style="font-size:0.72rem;opacity:0.6;font-weight:400;">(Optional — click to set up on the Habits page)</span>
+      <textarea data-step-routine rows="2" placeholder="Describe the routine, e.g. Practice grammar 30 min after school. Clicking here will open Habits so you can set frequency, reminders and more." readonly style="cursor:pointer;opacity:0.7;">${escapeHtml(entry.routineIdea || "")}</textarea>
+      <small style="font-size:0.7rem;opacity:0.55;margin-top:2px;display:block;">Clicking the box above will take you to the Habits page to create a full habit linked to this goal.</small>
+    </label>
     <button class="ghost-button micro-step-remove" type="button" data-remove-micro-step aria-label="Remove step ${index + 1}">Remove</button>
   `;
   row.querySelector("[data-step-text]")?.addEventListener("keydown", (event) => {
@@ -2963,8 +2739,8 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
     event.preventDefault();
     addMicroStepRow(form, row);
   });
-  // Redirect to habits page when user clicks the habit link button
-  row.querySelector("[data-step-routine-btn]")?.addEventListener("click", () => {
+  // Redirect to habits page when user clicks the routine textarea
+  row.querySelector("[data-step-routine]")?.addEventListener("click", () => {
     const goalTitleInput = form.querySelector('[name="title"]');
     const goalTitle = goalTitleInput ? goalTitleInput.value.trim() : "";
     const stepText = row.querySelector("[data-step-text]")?.value.trim() || "";
@@ -2983,8 +2759,7 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
     const rows = builder ? [...builder.querySelectorAll("[data-micro-step-row]")] : [];
     if (rows.length <= 1) {
       row.querySelector("[data-step-text]").value = "";
-      const inputRoutine = row.querySelector("[data-step-routine]");
-      if (inputRoutine) inputRoutine.value = "";
+      row.querySelector("[data-step-routine]").value = "";
     } else {
       row.remove();
     }
@@ -3376,201 +3151,6 @@ function scrollToHashSection(hash, control) {
   const target = document.querySelector(hash);
   if (!target) return false;
   pulseControl(control);
-function renderGoalSupportPickers() {
-  const options = goalStepOptions();
-  document.querySelectorAll("[data-habit-form]").forEach((form) => {
-    ensureGoalSupportPicker(form);
-    const select = form.querySelector("[data-goal-step-support]");
-    if (!select) return;
-    const previous = select.value;
-    select.innerHTML = `
-      <option value="">No goal step selected</option>
-      ${options.map((option) => `
-        <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>
-      `).join("")}
-    `;
-    select.value = options.some((option) => option.value === previous) ? previous : "";
-  });
-}
-
-function bindForms() {
-  document.querySelectorAll("[data-category-form]").forEach((categoryForm) => {
-    categoryForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const form = new FormData(categoryForm);
-      addCategory(form.get("categoryName"));
-      categoryForm.reset();
-      categoryForm.querySelector("input")?.focus();
-    });
-  });
-
-  document.querySelectorAll("[data-goal-form]").forEach((goalForm) => {
-    bindRoutinePlanner(goalForm);
-    goalForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const form = new FormData(goalForm);
-      const category = String(form.get("category") || fallbackCategory());
-      const steps = stepsFromGoalForm(goalForm, category);
-      state.goals.push({
-        id: uid("goal"),
-        title: String(form.get("title") || "").trim(),
-        category,
-        deadline: String(form.get("deadline") || ""),
-        why: String(form.get("why") || "").trim(),
-        measure: String(form.get("measure") || "").trim(),
-        reward: String(form.get("reward") || "").trim(),
-        steps,
-        complete: false
-      });
-      goalForm.reset();
-      goalForm._routineLinkChoices = [];
-      resetMicroStepBuilder(goalForm);
-      renderRoutineLinkPlanner(goalForm);
-      window.setTimeout(syncDateHints, 0);
-      saveAndRender();
-      showSaveStatus("goal");
-    });
-  });
-
-  document.querySelectorAll("[data-habit-form]").forEach((habitForm) => {
-    ensureWeekdayPicker(habitForm);
-    ensureGoalSupportPicker(habitForm);
-    habitForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const form = new FormData(habitForm);
-      const support = parseGoalStepValue(form.get("supportedStepKey"));
-      state.habits.push(makeHabit(
-        form.get("name"),
-        form.get("category"),
-        selectedScheduleDays(habitForm),
-        support.goalId,
-        support.stepId
-      ));
-      habitForm.reset();
-      habitForm._scheduleDays = [...ALL_WEEKDAYS];
-      const weeklyInput = habitForm.querySelector('[name="weeklyGoal"]');
-      if (weeklyInput) weeklyInput.value = 7;
-      renderWeekdayPickers();
-      renderGoalSupportPickers();
-      saveAndRender();
-      showSaveStatus("habit");
-    });
-  });
-
-  document.querySelectorAll("[data-task-form]").forEach((taskForm) => {
-    taskForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      if (!requireTaskDeadline(taskForm)) return;
-      const form = new FormData(taskForm);
-      const support = parseGoalStepValue(form.get("supportedStepKey"));
-      state.tasks.push(makeTask(
-        form.get("title"),
-        form.get("subtext"),
-        form.get("linkedHabitId"),
-        form.get("deadline"),
-        support.goalId,
-        support.stepId,
-        form.get("taskType")
-      ));
-      taskForm.reset();
-      renderTaskHabitOptions();
-      renderTaskGoalOptions();
-      syncDateHints();
-      saveAndRender();
-      taskForm.querySelector("input, textarea, select")?.focus();
-    });
-  });
-}
-
-function saveAndRender() {
-  saveState();
-  render();
-}
-
-function render() {
-  renderTodayReadouts();
-  syncMetrics();
-  renderCategoryOptions();
-  renderWeekdayPickers();
-  renderGoalSupportPickers();
-  renderRoutineLinkPlanners();
-  renderGoals();
-  renderCategories();
-  renderTasks();
-  renderHabits();
-  render21DayHabitsSection();
-  renderNotificationsSection();
-  bindDateHints();
-  syncDateHints();
-}
-
-function toggleEmpty(name, shouldShow) {
-  document.querySelectorAll(`[data-empty="${name}"]`).forEach((element) => {
-    element.hidden = !shouldShow;
-  });
-}
-
-function categoryClass(category) {
-  const map = {
-    Health: "health",
-    School: "study",
-    Hobbies: "creative"
-  };
-  return map[category] || "study";
-}
-
-function formatDate(value) {
-  if (!value) return "";
-  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function safeSessionSet(key, value) {
-  try {
-    sessionStorage.setItem(key, value);
-  } catch {
-    // Session storage can be unavailable in some browser modes.
-  }
-}
-
-function safeSessionTake(key) {
-  try {
-    const value = sessionStorage.getItem(key);
-    sessionStorage.removeItem(key);
-    return value;
-  } catch {
-    return null;
-  }
-}
-
-function pulseControl(control) {
-  if (!control || REDUCED_MOTION) return;
-  control.classList.remove("is-activating");
-  void control.offsetWidth;
-  control.classList.add("is-activating");
-  window.setTimeout(() => control.classList.remove("is-activating"), 420);
-}
-
-function pulseSection(section) {
-  if (!section || REDUCED_MOTION) return;
-  section.classList.remove("section-arriving");
-  void section.offsetWidth;
-  section.classList.add("section-arriving");
-  window.setTimeout(() => section.classList.remove("section-arriving"), 1100);
-}
-
-function scrollToHashSection(hash, control) {
-  const target = document.querySelector(hash);
-  if (!target) return false;
-  pulseControl(control);
   history.pushState(null, "", hash);
   target.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "start" });
   pulseSection(target);
@@ -3597,7 +3177,7 @@ function bindLinkMotion() {
         event.ctrlKey ||
         event.shiftKey ||
         event.altKey ||
-        (link.target && link.target !== "_self") ||
+        link.target && link.target !== "_self" ||
         link.hasAttribute("download")
       ) {
         return;
@@ -3645,9 +3225,12 @@ function bindDashboardSectionLinks() {
         event.clientY <= rect.bottom + buffer;
 
       if (!clickIsInsideButton) return;
-      event.preventDefault();
-      event.stopPropagation();
-      scrollToHashSection(link.getAttribute("href"), link);
+      const href = link.getAttribute("href");
+      if (href && href.startsWith("#")) {
+        event.preventDefault();
+        event.stopPropagation();
+        scrollToHashSection(href, link);
+      }
     }, true);
   });
 }
@@ -3658,83 +3241,31 @@ function bindButtonMotion() {
   });
 }
 
-function updateNavIndicator() {
-  const navList = document.querySelector(".nav-list");
-  if (!navList) return;
-  let indicator = navList.querySelector(".nav-active-indicator");
-  if (!indicator) {
-    indicator = document.createElement("div");
-    indicator.className = "nav-active-indicator";
-    navList.prepend(indicator);
-  }
-  const activeLink = navList.querySelector("a.nav-item.active") || navList.querySelector("a.nav-item");
-  if (activeLink) {
-    const listRect = navList.getBoundingClientRect();
-    const linkRect = activeLink.getBoundingClientRect();
-    const topOffset = linkRect.top - listRect.top + 2;
-    const height = Math.max(18, linkRect.height - 4);
-    indicator.style.transform = `translateY(${topOffset}px)`;
-    indicator.style.height = `${height}px`;
-    indicator.style.opacity = "1";
-  } else {
-    indicator.style.opacity = "0";
-  }
-}
-
 function bindScrollNav() {
-  const links = [...document.querySelectorAll(".nav-list a")];
+  const links = [...document.querySelectorAll('.nav-list a[href^="#"]')];
   if (!links.length) return;
-
-  const sectionPairs = links
-    .map((link) => {
-      const href = link.getAttribute("href") || "";
-      let hash = href.includes("#") ? href.split("#")[1] : "";
-      if (!hash && href.endsWith(".html")) {
-        const pageName = href.replace(".html", "").replace("index", "dashboard");
-        hash = pageName === "dashboard" ? "dashboard" : `${pageName}-section`;
-      }
-      const section = hash ? document.getElementById(hash) || document.querySelector(`#${hash}`) : null;
-      return { link, section };
-    })
-    .filter((pair) => pair.section);
-
-  if (!sectionPairs.length) return;
-
+  const sections = links
+    .map((link) => document.querySelector(link.getAttribute("href")))
+    .filter(Boolean);
   let ticking = false;
   const updateActive = () => {
-    let currentPair = sectionPairs[0];
-    const threshold = window.innerHeight * 0.42;
-
-    sectionPairs.forEach((pair) => {
-      const rect = pair.section.getBoundingClientRect();
-      if (rect.top <= threshold && rect.bottom > 0) {
-        currentPair = pair;
-      }
+    let current = sections[0];
+    sections.forEach((section) => {
+      if (section.getBoundingClientRect().top <= window.innerHeight * 0.42) current = section;
     });
-
     links.forEach((link) => {
-      const isCurrent = link === currentPair.link;
-      link.classList.toggle("active", isCurrent);
-      if (isCurrent) {
-        link.setAttribute("aria-current", "page");
-      } else {
-        link.removeAttribute("aria-current");
-      }
+      link.classList.toggle("active", link.getAttribute("href") === `#${current.id}`);
     });
-    updateNavIndicator();
     ticking = false;
   };
-
   const requestUpdate = () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(updateActive);
   };
-
   window.addEventListener("scroll", requestUpdate, { passive: true });
   window.addEventListener("resize", requestUpdate);
   updateActive();
-  window.setTimeout(updateNavIndicator, 100);
 }
 
 /* ==========================================================================
@@ -3745,50 +3276,7 @@ function render21DayHabitsSection() {
   document.querySelectorAll("[data-21day-habits-container]").forEach((container) => {
     container.innerHTML = "";
     if (!state.habits || !state.habits.length) {
-      container.innerHTML = `
-        <div class="habit-21day-empty-visual">
-          <div class="empty-visual-header">
-            <span class="psych-badge-chip">NEURAL REWIRING</span>
-            <span class="xp-tag">+500 XP Boost</span>
-          </div>
-          <p class="empty-visual-desc">
-            Brain science shows <strong>21 consecutive days</strong> lock a habit into your neural pathway. Start your first habit commitment today!
-          </p>
-          <div class="habit-21day-timeline-preview">
-            <div class="timeline-step active-step">
-              <span class="step-num">Day 1</span>
-              <span class="step-label">Trigger</span>
-            </div>
-            <div class="timeline-connector"></div>
-            <div class="timeline-step">
-              <span class="step-num">Day 7</span>
-              <span class="step-label">Routine</span>
-            </div>
-            <div class="timeline-connector"></div>
-            <div class="timeline-step">
-              <span class="step-num">Day 14</span>
-              <span class="step-label">Lock-in</span>
-            </div>
-            <div class="timeline-connector"></div>
-            <div class="timeline-step master-step">
-              <span class="step-num">Day 21</span>
-              <span class="step-label">Mastery</span>
-            </div>
-          </div>
-          <button class="text-button primary-btn start-21day-btn" type="button" data-start-21day-btn>
-            + Start 21-Day Habit Protocol
-          </button>
-        </div>
-      `;
-      container.querySelector("[data-start-21day-btn]")?.addEventListener("click", () => {
-        if (typeof window.navigateToSection === "function") {
-          window.navigateToSection("#habits-section");
-        } else {
-          const habitsSec = document.getElementById("habits-section") || document.getElementById("habits");
-          if (habitsSec) habitsSec.scrollIntoView({ behavior: "smooth" });
-          else window.location.href = window.location.pathname.includes("/mobile/") ? "../habits.html" : "habits.html";
-        }
-      });
+      container.innerHTML = `<div class="empty-state compact" style="margin-top: 8px;"><strong>No active habits</strong><span>Add a habit in the Habits section to start your 21-Day Protocol!</span></div>`;
       return;
     }
 
@@ -3802,26 +3290,22 @@ function render21DayHabitsSection() {
 
       const card = document.createElement("div");
       card.className = `habit-21day-item ${isCompleted21 ? "is-mastered" : ""}`;
-      card.style.cssText = "background: linear-gradient(135deg, rgba(0,246,255,0.06), rgba(0,18,28,0.7)); border: 1px solid rgba(0,246,255,0.25); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);";
+      card.style.cssText = "background: rgba(0,0,0,0.3); border: 1px solid rgba(0,246,255,0.2); border-radius: 12px; padding: 12px; margin-bottom: 10px;";
       card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <div>
-            <strong style="color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
-              ${escapeHtml(habit.name)} ${isCompleted21 ? '<span style="background:rgba(0,255,208,0.2);color:#00ffd0;font-size:0.7rem;padding:2px 8px;border-radius:12px;border:1px solid rgba(0,255,208,0.4);">21-Day Master</span>' : ''}
-            </strong>
-            <span style="display: block; font-size: 0.76rem; color: #7caab4; margin-top: 2px;">
-              ${escapeHtml(habit.category)} &bull; <span style="color:#00ffd0;font-weight:700;">${streak} day streak</span>
-            </span>
+            <strong style="color: #fff; font-size: 0.95rem;">${escapeHtml(habit.name)} ${isCompleted21 ? "🏆 21-Day Master" : ""}</strong>
+            <span style="display: block; font-size: 0.75rem; color: #94a3b8;">${escapeHtml(habit.category)} | 🔥 ${streak} day streak</span>
           </div>
-          <button class="ghost-button compact-button" type="button" data-check-21day="${habit.id}" ${doneToday ? "disabled" : ""} style="font-size: 0.78rem; padding: 6px 12px; border-radius: 10px; font-weight: 700; ${doneToday ? 'opacity:0.6;background:rgba(0,255,208,0.1);color:#00ffd0;' : 'color:#00f6ff;border-color:rgba(0,246,255,0.4);'}">
-            ${doneToday ? "Checked Today" : "Check In"}
+          <button class="ghost-button compact-button" type="button" data-check-21day="${habit.id}" ${doneToday ? "disabled" : ""} style="font-size: 0.75rem; padding: 4px 10px;">
+            ${doneToday ? "✓ Checked Today" : "Check In"}
           </button>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
-          <div style="flex: 1; height: 8px; background: rgba(0,246,255,0.1); border-radius: 999px; overflow: hidden; border: 1px solid rgba(0,246,255,0.2);">
-            <div style="width: ${percent}%; height: 100%; background: linear-gradient(90deg, #00f6ff, #00ffd0); box-shadow: 0 0 10px rgba(0,246,255,0.6); transition: width 400ms ease;"></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden;">
+            <div style="width: ${percent}%; height: 100%; background: linear-gradient(90deg, #00e5ff, #00ffd0); transition: width 300ms ease;"></div>
           </div>
-          <span style="font-size: 0.78rem; font-weight: 800; color: ${isCompleted21 ? "#00ffd0" : "#a8d7df"}; min-width: 70px; text-align: right;">
+          <span style="font-size: 0.8rem; font-weight: bold; color: ${isCompleted21 ? "#00ffd0" : "#a8d7df"}; min-width: 65px; text-align: right;">
             ${isCompleted21 ? "Mastered!" : `Day ${dayCount} / 21`}
           </span>
         </div>
@@ -3832,7 +3316,7 @@ function render21DayHabitsSection() {
         const newStreak = habitStreak(habit);
         if (newStreak === 21) {
           addNotification({
-            title: `21-Day Habit Master Unlocked!`,
+            title: `🏆 21-Day Habit Master Unlocked!`,
             body: `Incredible! You completed 21 consecutive days of "${habit.name}"! +500 XP Boost awarded!`,
             type: "reward"
           });
@@ -3851,13 +3335,44 @@ function render21DayHabitsSection() {
   });
 }
 
-function evaluateRemindersAndDeadlines() {
-  if (!state.habits || !state.tasks || !state.goals) return;
+/* ==========================================================================
+   IN-APP & OS NOTIFICATION SYSTEM
+   ========================================================================== */
 
-  const today = todayKey();
-  const missedHabits = state.habits.filter((h) => !habitDoneOn(h, today));
-  const overdueTasks = state.tasks.filter((t) => !t.complete && t.dueDate && t.dueDate < today);
-  const dueGoals = state.goals.filter((g) => !g.complete && g.deadline);
+function addNotification({ title, body, type = "info" }) {
+  if (!state.notifications) state.notifications = [];
+  const notif = {
+    id: uid("notif"),
+    title,
+    body,
+    type,
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    read: false
+  };
+  state.notifications.unshift(notif);
+  if (state.notifications.length > 30) state.notifications.pop();
+
+  pushOSNotification(title, body);
+}
+
+function pushOSNotification(title, body) {
+  if (state.notificationSettings?.osEnabled && "Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification(title, { body, icon: "/favicon.ico" });
+    } catch (e) {
+      console.warn("OS Notification failed", e);
+    }
+  }
+}
+
+function evaluateRemindersAndDeadlines() {
+  if (!state.notifications) state.notifications = [];
+  const missedHabits = todayMissedHabits();
+  const overdueTasks = state.tasks.filter((t) => isTaskOverdue(t));
+  const dueGoals = state.goals.filter((g) => {
+    const left = daysLeft(g.deadline);
+    return left !== null && left >= 0 && left <= 2 && goalProgress(g) < 100;
+  });
 
   const todayStr = dateToValue(new Date());
   const lastCheck = localStorage.getItem("planwell_last_notif_check");
@@ -3866,7 +3381,7 @@ function evaluateRemindersAndDeadlines() {
 
   if (missedHabits.length) {
     addNotification({
-      title: `Daily Habit Reminder`,
+      title: `Daily Habit Reminder ⚡`,
       body: `You have ${missedHabits.length} habit(s) left to complete today (${missedHabits.map((h) => h.name).slice(0, 2).join(", ")}).`,
       type: "habit"
     });
@@ -3874,7 +3389,7 @@ function evaluateRemindersAndDeadlines() {
 
   if (overdueTasks.length) {
     addNotification({
-      title: `Overdue Task Warning`,
+      title: `Overdue Task Warning ⚠️`,
       body: `${overdueTasks.length} task(s) are past due! (e.g. "${overdueTasks[0].title}").`,
       type: "task"
     });
@@ -3882,7 +3397,7 @@ function evaluateRemindersAndDeadlines() {
 
   if (dueGoals.length) {
     addNotification({
-      title: `Goal Deadline Alert`,
+      title: `Goal Deadline Alert 🎯`,
       body: `Goal "${dueGoals[0].title}" deadline is approaching within 48 hours!`,
       type: "goal"
     });
@@ -3958,7 +3473,7 @@ function bindNotificationControls() {
           if (permission === "granted") {
             if (!state.notificationSettings) state.notificationSettings = {};
             state.notificationSettings.osEnabled = true;
-            addNotification({ title: "OS Notifications Enabled", body: "You will now receive native device notifications for habits, tasks, and goal deadlines.", type: "system" });
+            addNotification({ title: "OS Notifications Enabled 🔔", body: "You will now receive native device notifications for habits, tasks, and goal deadlines.", type: "system" });
           } else {
             alert("Notification permission was denied in your browser settings.");
             toggle.checked = false;
@@ -3990,55 +3505,9 @@ function bindNotificationControls() {
         perm = await Notification.requestPermission();
       }
       if (perm === "granted") {
-        new Notification("Plan Well Alert", { body: "Daily habits, task reminders, and goal deadline alerts are active." });
+        new Notification("Plan Well Alert! 🔔", { body: "Daily habits, task reminders, and goal deadline alerts are active." });
       } else {
         alert("Notification permission denied in browser.");
-      }
-    });
-  });
-}
-
-function bindProfileModalControls() {
-  document.querySelectorAll("[data-open-profile-modal]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const modal = document.querySelector("[data-profile-modal]");
-      if (!modal) return;
-      modal.hidden = false;
-      modal.style.display = "grid";
-      const form = modal.querySelector("[data-edit-profile-form]");
-      if (form) {
-        const usernameInput = form.querySelector('[name="username"]');
-        const handleInput = form.querySelector('[name="handle"]');
-        if (usernameInput) usernameInput.value = state.userProfile?.username || authDisplayName();
-        if (handleInput) handleInput.value = state.userProfile?.handle || "@user_01";
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-close-profile-modal]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const modal = document.querySelector("[data-profile-modal]");
-      if (modal) {
-        modal.hidden = true;
-        modal.style.display = "none";
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-edit-profile-form]").forEach((form) => {
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const username = String(formData.get("username") || "").trim();
-      const handle = String(formData.get("handle") || "").trim();
-      if (!state.userProfile) state.userProfile = {};
-      state.userProfile.username = username;
-      state.userProfile.handle = handle;
-      saveAndRender();
-      const modal = document.querySelector("[data-profile-modal]");
-      if (modal) {
-        modal.hidden = true;
-        modal.style.display = "none";
       }
     });
   });
@@ -4057,7 +3526,6 @@ async function initializeApp() {
   bindButtonMotion();
   bindScrollNav();
   bindNotificationControls();
-  bindProfileModalControls();
   initSupabaseClient();
 
   if (isLocalPreview()) {
@@ -4088,9 +3556,6 @@ async function initializeApp() {
   setAuthVisibility();
   window.setInterval(() => {
     renderTodayReadouts();
-  }, 1000);
-
-  window.setInterval(() => {
     renderEndOfDayReminders();
     evaluateRemindersAndDeadlines();
   }, 60000);
@@ -4106,7 +3571,7 @@ async function initializeApp() {
         const banner = document.createElement("div");
         banner.className = "linked-goal-banner";
         banner.style.cssText = "background:rgba(0,246,255,0.08);border:1px solid rgba(0,246,255,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:#a8d7df;";
-        banner.innerHTML = `<strong style="color:#00f6ff;">Linked from goal:</strong> <em>${escapeHtml(linkedGoalTitle)}</em>${linkedStepText ? ` &mdash; step: <em>${escapeHtml(linkedStepText)}</em>` : ""}. Set the frequency, schedule and reminders below, then save.`;
+        banner.innerHTML = `<strong style="color:#00f6ff;">&#128279; Linked from goal:</strong> <em>${escapeHtml(linkedGoalTitle)}</em>${linkedStepText ? ` &mdash; step: <em>${escapeHtml(linkedStepText)}</em>` : ""}. Set the frequency, schedule and reminders below, then save.`;
         habitSection.prepend(banner);
       }
       if (linkedStepText) {

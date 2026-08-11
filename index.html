@@ -63,12 +63,12 @@
             <h1>Build the week you actually want.</h1>
           </div>
           <div class="top-actions" style="display: flex; gap: 10px; align-items: center;">
-            <div class="today-readout" data-today-readout><span>Time Tracker</span><strong>Syncing time...</strong></div>
+            <div class="today-readout" data-today-readout></div>
             <a class="text-button link-button" href="goals.html">Add goal</a>
             <a class="text-button link-button" href="habits.html">Add habit</a>
 
             <div class="notification-wrapper" style="position: relative;">
-              <button class="ghost-button notification-bell compact-button" type="button" data-notification-trigger title="Notifications & Reminders" style="position: relative; font-size: 1.1rem; padding: 6px 12px; color: #00f6ff; border: 1px solid rgba(0,246,255,0.3); border-radius: 8px; background: rgba(0,246,255,0.07);">
+            <button class="ghost-button notification-bell compact-button" type="button" data-notification-trigger title="Notifications & Reminders" style="position: relative; font-size: 1.1rem; padding: 6px 12px; color: #00f6ff; border: 1px solid rgba(0,246,255,0.3); border-radius: 8px; background: rgba(0,246,255,0.07);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -134,7 +134,7 @@
                     <p class="eyebrow">Tasks</p>
                     <h2>Action lane</h2>
                   </div>
-                  <a class="text-button link-button compact-button" href="tasks.html">Go to tasks</a>
+                  <a class="text-button link-button compact-button" href="tasks.html" data-dashboard-section-link>Go to tasks</a>
                 </div>
                 <div class="summary-cell-grid">
                   <div class="summary-cell"><span>Open tasks</span><strong data-metric="openTasks">0</strong></div>
@@ -166,7 +166,7 @@
                     <p class="eyebrow">Habits</p>
                     <h2>Cadence lane</h2>
                   </div>
-                  <a class="text-button link-button compact-button" href="habits.html">Go to habits</a>
+                  <a class="text-button link-button compact-button" href="habits.html" data-dashboard-section-link>Go to habits</a>
                 </div>
                 <div class="summary-cell-grid">
                   <div class="summary-cell"><span>Habit score</span><strong data-metric="habitScore">0%</strong></div>
@@ -194,7 +194,7 @@
                     <p class="eyebrow">Goals</p>
                     <h2>Mission lane</h2>
                   </div>
-                  <a class="text-button link-button compact-button" href="goals.html">Go to goals</a>
+                  <a class="text-button link-button compact-button" href="goals.html" data-dashboard-section-link>Go to goals</a>
                 </div>
                 <div class="summary-cell-grid">
                   <div class="summary-cell"><span>Active</span><strong data-metric="activeGoals">0</strong></div>
@@ -222,7 +222,7 @@
                     <p class="eyebrow">Rewards</p>
                     <h2>Unlock lane</h2>
                   </div>
-                  <a class="text-button link-button compact-button" href="rewards.html">Go to rewards</a>
+                  <a class="text-button link-button compact-button" href="rewards.html" data-dashboard-section-link>Go to rewards</a>
                 </div>
                 <div class="summary-cell-grid">
                   <div class="summary-cell"><span>XP</span><strong data-metric="weeklyXp">0</strong></div>
