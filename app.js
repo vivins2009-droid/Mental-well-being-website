@@ -1159,7 +1159,6 @@ function goalEditMarkup(goal) {
 }
 
 function editStepMarkup(step, index) {
-  const isRemoved = Boolean(step.routineRemoved);
   return `
     <div class="micro-step-builder-row" data-edit-step-row data-step-id="${escapeHtml(step.id || "")}">
       <div class="micro-step-builder-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</div>
@@ -1171,22 +1170,11 @@ function editStepMarkup(step, index) {
         </label>
       </div>
 
-      <div class="micro-step-col habit-col">
-        <div class="habit-col-header">
-          <span class="micro-step-label-text">Habit for this step</span>
-          <button type="button" class="habit-page-link-btn" data-go-to-habits title="Open Habits page to set up full habit">Habits ↗</button>
-        </div>
-        <div class="habit-input-wrap">
-          <input type="text" data-edit-step-routine class="step-routine-input" placeholder="e.g. Practice 20 min after school" value="${escapeHtml(step.routineIdea || "")}" ${isRemoved ? "hidden" : ""}>
-          <div class="habit-removed-msg" data-habit-removed-msg ${isRemoved ? "" : "hidden"}>
-            <span class="removed-text">✨ Habit plan removed</span>
-            <button type="button" class="ghost-button compact-button undo-btn" data-undo-habit>Undo</button>
-          </div>
-        </div>
-        <label class="habit-checkbox-label">
-          <input type="checkbox" data-remove-habit-check ${isRemoved ? "checked" : ""}>
-          <span>Mark habit added</span>
-        </label>
+      <div class="micro-step-col habit-reminder-col">
+        <button type="button" class="habit-reminder-badge" data-go-to-habits title="Click to set up this step as a habit on the Habits page">
+          <span class="reminder-icon">💡</span>
+          <span>Add to Habits ↗</span>
+        </button>
       </div>
 
       <label class="edit-step-done">
@@ -1212,52 +1200,16 @@ function bindGoalEditControls(row, goal) {
     list?.insertAdjacentHTML("beforeend", editStepMarkup(normalizeStep({ text: "" }), list.querySelectorAll("[data-edit-step-row]").length));
     refresh();
   });
-  row.addEventListener("change", (event) => {
-    const checkbox = event.target.closest("[data-remove-habit-check]");
-    if (!checkbox) return;
-    const stepRow = checkbox.closest("[data-edit-step-row]");
-    if (!stepRow) return;
-    const routineInput = stepRow.querySelector("[data-edit-step-routine]");
-    const removedMsg = stepRow.querySelector("[data-habit-removed-msg]");
-    if (checkbox.checked) {
-      if (routineInput && routineInput.value.trim()) {
-        stepRow.dataset.savedRoutine = routineInput.value;
-      }
-      if (routineInput) {
-        routineInput.value = "";
-        routineInput.hidden = true;
-      }
-      if (removedMsg) removedMsg.hidden = false;
-    } else {
-      if (routineInput && stepRow.dataset.savedRoutine) {
-        routineInput.value = stepRow.dataset.savedRoutine;
-      }
-      if (routineInput) routineInput.hidden = false;
-      if (removedMsg) removedMsg.hidden = true;
-    }
-  });
   row.addEventListener("click", (event) => {
-    const undo = event.target.closest("[data-undo-habit]");
-    if (undo) {
-      const stepRow = undo.closest("[data-edit-step-row]");
-      const checkbox = stepRow?.querySelector("[data-remove-habit-check]");
-      if (checkbox) {
-        checkbox.checked = false;
-        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-      return;
-    }
     const goToHabits = event.target.closest("[data-go-to-habits]");
     if (goToHabits) {
       const stepRow = goToHabits.closest("[data-edit-step-row]");
       const titleInput = form?.querySelector('[name="title"]');
       const goalTitle = titleInput ? titleInput.value.trim() : (goal ? goal.title : "");
       const stepText = stepRow?.querySelector("[data-edit-step-text]")?.value.trim() || "";
-      const routineInput = stepRow?.querySelector("[data-edit-step-routine]");
-      const routineText = routineInput?.value.trim() || stepRow?.dataset.savedRoutine || "";
       const params = new URLSearchParams();
       if (goalTitle) params.set("linkedGoal", goalTitle);
-      if (stepText) params.set("linkedStep", routineText || stepText);
+      if (stepText) params.set("linkedStep", stepText);
       const base = window.location.pathname.includes("/mobile/") ? "../habits.html" : "habits.html";
       window.location.href = `${base}?${params.toString()}`;
       return;
@@ -1268,18 +1220,9 @@ function bindGoalEditControls(row, goal) {
     const rows = list ? [...list.querySelectorAll("[data-edit-step-row]")] : [];
     if (rows.length <= 1) {
       const textInput = stepRow.querySelector("[data-edit-step-text]");
-      const routineInput = stepRow.querySelector("[data-edit-step-routine]");
-      const checkbox = stepRow.querySelector("[data-remove-habit-check]");
-      const removedMsg = stepRow.querySelector("[data-habit-removed-msg]");
       if (textInput) textInput.value = "";
-      if (routineInput) {
-        routineInput.value = "";
-        routineInput.hidden = false;
-      }
-      stepRow.dataset.savedRoutine = "";
-      if (checkbox) checkbox.checked = false;
-      if (removedMsg) removedMsg.hidden = true;
-      stepRow.querySelector("[data-edit-step-done]").checked = false;
+      const doneInput = stepRow.querySelector("[data-edit-step-done]");
+      if (doneInput) doneInput.checked = false;
     } else {
       stepRow.remove();
     }
@@ -1296,13 +1239,10 @@ function bindGoalEditControls(row, goal) {
     goal.reward = String(data.get("reward") || "").trim();
     goal.steps = [...form.querySelectorAll("[data-edit-step-row]")]
       .map((stepRow) => {
-        const isRemoved = Boolean(stepRow.querySelector("[data-remove-habit-check]")?.checked);
-        const routineInput = stepRow.querySelector("[data-edit-step-routine]");
         return normalizeStep({
           id: stepRow.dataset.stepId || uid("step"),
           text: stepRow.querySelector("[data-edit-step-text]")?.value,
-          routineIdea: isRemoved ? "" : (routineInput?.value || ""),
-          routineRemoved: isRemoved,
+          routineIdea: "",
           done: stepRow.querySelector("[data-edit-step-done]")?.checked,
           linkedHabitTarget: 7
         });
@@ -2756,16 +2696,10 @@ function microStepEntries(form) {
     return microStepLinesFromTextarea(form).map((text) => ({ text, routineIdea: "" }));
   }
   return [...builder.querySelectorAll("[data-micro-step-row]")]
-    .map((row) => {
-      const routineInput = row.querySelector("[data-step-routine]");
-      const isRemoved = Boolean(row.querySelector("[data-remove-habit-check]")?.checked);
-      const routineIdea = isRemoved ? "" : String(routineInput?.value || "").trim();
-      return {
-        text: String(row.querySelector("[data-step-text]")?.value || "").trim(),
-        routineIdea,
-        routineRemoved: isRemoved
-      };
-    })
+    .map((row) => ({
+      text: String(row.querySelector("[data-step-text]")?.value || "").trim(),
+      routineIdea: ""
+    }))
     .filter((entry) => entry.text);
 }
 
@@ -2810,7 +2744,6 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
   const row = document.createElement("div");
   row.className = "micro-step-builder-row";
   row.dataset.microStepRow = "";
-  const isRemoved = Boolean(entry.routineRemoved);
 
   row.innerHTML = `
     <div class="micro-step-builder-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</div>
@@ -2822,38 +2755,15 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
       </label>
     </div>
 
-    <div class="micro-step-col habit-col">
-      <div class="habit-col-header">
-        <span class="micro-step-label-text">Habit for this step</span>
-        <button type="button" class="habit-page-link-btn" data-go-to-habits title="Open Habits page to set up full habit">Habits ↗</button>
-      </div>
-      <div class="habit-input-wrap">
-        <input type="text" data-step-routine class="step-routine-input" placeholder="e.g. Practice 20 min after school" value="${escapeHtml(entry.routineIdea || "")}" ${isRemoved ? "hidden" : ""}>
-        <div class="habit-removed-msg" data-habit-removed-msg ${isRemoved ? "" : "hidden"}>
-          <span class="removed-text">✨ Habit plan removed</span>
-          <button type="button" class="ghost-button compact-button undo-btn" data-undo-habit>Undo</button>
-        </div>
-      </div>
-      <label class="habit-checkbox-label">
-        <input type="checkbox" data-remove-habit-check ${isRemoved ? "checked" : ""}>
-        <span>Mark habit added</span>
-      </label>
+    <div class="micro-step-col habit-reminder-col">
+      <button type="button" class="habit-reminder-badge" data-go-to-habits title="Click to set up this step as a habit on the Habits page">
+        <span class="reminder-icon">💡</span>
+        <span>Add to Habits ↗</span>
+      </button>
     </div>
 
     <button class="ghost-button micro-step-remove" type="button" data-remove-micro-step aria-label="Remove step ${index + 1}">Remove</button>
   `;
-
-  const routineInput = row.querySelector("[data-step-routine]");
-  const removedMsg = row.querySelector("[data-habit-removed-msg]");
-  const checkbox = row.querySelector("[data-remove-habit-check]");
-  const undoBtn = row.querySelector("[data-undo-habit]");
-  const goToHabitsBtn = row.querySelector("[data-go-to-habits]");
-
-  if (entry.savedRoutine) {
-    row.dataset.savedRoutine = entry.savedRoutine;
-  } else if (entry.routineIdea) {
-    row.dataset.savedRoutine = entry.routineIdea;
-  }
 
   row.querySelector("[data-step-text]")?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter") return;
@@ -2861,38 +2771,13 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
     addMicroStepRow(form, row);
   });
 
-  checkbox?.addEventListener("change", () => {
-    if (checkbox.checked) {
-      if (routineInput.value.trim()) {
-        row.dataset.savedRoutine = routineInput.value;
-      }
-      routineInput.value = "";
-      routineInput.hidden = true;
-      removedMsg.hidden = false;
-    } else {
-      if (row.dataset.savedRoutine) {
-        routineInput.value = row.dataset.savedRoutine;
-      }
-      routineInput.hidden = false;
-      removedMsg.hidden = true;
-    }
-    syncMicroStepBackingField(form);
-    renderRoutineLinkPlanner(form);
-  });
-
-  undoBtn?.addEventListener("click", () => {
-    checkbox.checked = false;
-    checkbox.dispatchEvent(new Event("change"));
-  });
-
-  goToHabitsBtn?.addEventListener("click", () => {
+  row.querySelector("[data-go-to-habits]")?.addEventListener("click", () => {
     const goalTitleInput = form.querySelector('[name="title"]');
     const goalTitle = goalTitleInput ? goalTitleInput.value.trim() : "";
     const stepText = row.querySelector("[data-step-text]")?.value.trim() || "";
-    const routineText = routineInput?.value.trim() || row.dataset.savedRoutine || "";
     const params = new URLSearchParams();
     if (goalTitle) params.set("linkedGoal", goalTitle);
-    if (stepText) params.set("linkedStep", routineText || stepText);
+    if (stepText) params.set("linkedStep", stepText);
     const base = window.location.pathname.includes("/mobile/") ? "../habits.html" : "habits.html";
     window.location.href = `${base}?${params.toString()}`;
   });
@@ -2902,22 +2787,11 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
     renderRoutineLinkPlanner(form);
   });
 
-  routineInput?.addEventListener("input", () => {
-    row.dataset.savedRoutine = routineInput.value;
-    syncMicroStepBackingField(form);
-    renderRoutineLinkPlanner(form);
-  });
-
   row.querySelector("[data-remove-micro-step]")?.addEventListener("click", () => {
     const builder = form.querySelector("[data-micro-step-builder]");
     const rows = builder ? [...builder.querySelectorAll("[data-micro-step-row]")] : [];
     if (rows.length <= 1) {
       row.querySelector("[data-step-text]").value = "";
-      if (routineInput) routineInput.value = "";
-      row.dataset.savedRoutine = "";
-      if (checkbox) checkbox.checked = false;
-      if (routineInput) routineInput.hidden = false;
-      if (removedMsg) removedMsg.hidden = true;
     } else {
       row.remove();
     }
@@ -2981,7 +2855,7 @@ function ensureMicroStepBuilder(form) {
     <div class="micro-step-builder-head">
       <div>
         <strong>Micro steps</strong>
-        <span>Add milestones for your goal and plan optional daily habits for each step.</span>
+        <span>Add milestones for your goal and easily turn steps into habits.</span>
       </div>
       <button class="ghost-button" type="button" data-add-micro-step>Add step</button>
     </div>
