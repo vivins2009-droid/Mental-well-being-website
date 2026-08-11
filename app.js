@@ -1172,7 +1172,7 @@ function editStepMarkup(step, index) {
 
       <div class="micro-step-col habit-reminder-col">
         <button type="button" class="habit-reminder-badge" data-go-to-habits title="Click to set up this step as a habit on the Habits page">
-          <span class="reminder-icon">💡</span>
+          <span class="reminder-icon"></span>
           <span>Add to Habits ↗</span>
         </button>
       </div>
@@ -2688,11 +2688,14 @@ function bindCyberSelects() {
       const existingPopover = parent.querySelector(".cyber-select-popover");
       if (existingPopover) {
         existingPopover.remove();
+        parent.classList.remove("has-open-cyber-select");
         select.blur();
         return;
       }
 
       closeAllCyberSelects();
+
+      parent.classList.add("has-open-cyber-select");
 
       const options = [...select.options];
       if (!options.length) return;
@@ -2710,7 +2713,7 @@ function bindCyberSelects() {
           select.value = opt.value;
           select.dispatchEvent(new Event("change", { bubbles: true }));
           select.dispatchEvent(new Event("input", { bubbles: true }));
-          popover.remove();
+          closeAllCyberSelects();
           select.blur();
         });
         popover.append(item);
@@ -2735,6 +2738,7 @@ function bindCyberSelects() {
 
 function closeAllCyberSelects() {
   document.querySelectorAll(".cyber-select-popover").forEach((p) => p.remove());
+  document.querySelectorAll(".cyber-select-wrapper").forEach((w) => w.classList.remove("has-open-cyber-select"));
 }
 
 function requireTaskDeadline(form) {
@@ -2824,7 +2828,7 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
 
     <div class="micro-step-col habit-reminder-col">
       <button type="button" class="habit-reminder-badge" data-go-to-habits title="Click to set up this step as a habit on the Habits page">
-        <span class="reminder-icon">💡</span>
+        <span class="reminder-icon"></span>
         <span>Add to Habits ↗</span>
       </button>
     </div>
@@ -3395,8 +3399,8 @@ function render21DayHabitsSection() {
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <div>
-            <strong style="color: #fff; font-size: 0.95rem;">${escapeHtml(habit.name)} ${isCompleted21 ? "🏆 21-Day Master" : ""}</strong>
-            <span style="display: block; font-size: 0.75rem; color: #94a3b8;">${escapeHtml(habit.category)} | 🔥 ${streak} day streak</span>
+            <strong style="color: #fff; font-size: 0.95rem;">${escapeHtml(habit.name)} ${isCompleted21 ? "21-Day Master" : ""}</strong>
+            <span style="display: block; font-size: 0.75rem; color: #94a3b8;">${escapeHtml(habit.category)} | ${streak} day streak</span>
           </div>
           <button class="ghost-button compact-button" type="button" data-check-21day="${habit.id}" ${doneToday ? "disabled" : ""} style="font-size: 0.75rem; padding: 4px 10px;">
             ${doneToday ? "✓ Checked Today" : "Check In"}
@@ -3417,7 +3421,7 @@ function render21DayHabitsSection() {
         const newStreak = habitStreak(habit);
         if (newStreak === 21) {
           addNotification({
-            title: `🏆 21-Day Habit Master Unlocked!`,
+            title: `21-Day Habit Master Unlocked!`,
             body: `Incredible! You completed 21 consecutive days of "${habit.name}"! +500 XP Boost awarded!`,
             type: "reward"
           });
@@ -3482,7 +3486,7 @@ function evaluateRemindersAndDeadlines() {
 
   if (missedHabits.length) {
     addNotification({
-      title: `Daily Habit Reminder ⚡`,
+      title: `Daily Habit Reminder`,
       body: `You have ${missedHabits.length} habit(s) left to complete today (${missedHabits.map((h) => h.name).slice(0, 2).join(", ")}).`,
       type: "habit"
     });
@@ -3490,7 +3494,7 @@ function evaluateRemindersAndDeadlines() {
 
   if (overdueTasks.length) {
     addNotification({
-      title: `Overdue Task Warning ⚠️`,
+      title: `Overdue Task Warning`,
       body: `${overdueTasks.length} task(s) are past due! (e.g. "${overdueTasks[0].title}").`,
       type: "task"
     });
@@ -3498,7 +3502,7 @@ function evaluateRemindersAndDeadlines() {
 
   if (dueGoals.length) {
     addNotification({
-      title: `Goal Deadline Alert 🎯`,
+      title: `Goal Deadline Alert`,
       body: `Goal "${dueGoals[0].title}" deadline is approaching within 48 hours!`,
       type: "goal"
     });
@@ -3574,7 +3578,7 @@ function bindNotificationControls() {
           if (permission === "granted") {
             if (!state.notificationSettings) state.notificationSettings = {};
             state.notificationSettings.osEnabled = true;
-            addNotification({ title: "OS Notifications Enabled 🔔", body: "You will now receive native device notifications for habits, tasks, and goal deadlines.", type: "system" });
+            addNotification({ title: "OS Notifications Enabled", body: "You will now receive native device notifications for habits, tasks, and goal deadlines.", type: "system" });
           } else {
             alert("Notification permission was denied in your browser settings.");
             toggle.checked = false;
@@ -3606,7 +3610,7 @@ function bindNotificationControls() {
         perm = await Notification.requestPermission();
       }
       if (perm === "granted") {
-        new Notification("Plan Well Alert! 🔔", { body: "Daily habits, task reminders, and goal deadline alerts are active." });
+        new Notification("Plan Well Alert!", { body: "Daily habits, task reminders, and goal deadline alerts are active." });
       } else {
         alert("Notification permission denied in browser.");
       }
@@ -3673,7 +3677,7 @@ async function initializeApp() {
         const banner = document.createElement("div");
         banner.className = "linked-goal-banner";
         banner.style.cssText = "background:rgba(0,246,255,0.08);border:1px solid rgba(0,246,255,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:#a8d7df;";
-        banner.innerHTML = `<strong style="color:#00f6ff;">&#128279; Linked from goal:</strong> <em>${escapeHtml(linkedGoalTitle)}</em>${linkedStepText ? ` &mdash; step: <em>${escapeHtml(linkedStepText)}</em>` : ""}. Set the frequency, schedule and reminders below, then save.`;
+        banner.innerHTML = `<strong style="color:#00f6ff;">Linked from goal:</strong> <em>${escapeHtml(linkedGoalTitle)}</em>${linkedStepText ? ` &mdash; step: <em>${escapeHtml(linkedStepText)}</em>` : ""}. Set the frequency, schedule and reminders below, then save.`;
         habitSection.prepend(banner);
       }
       if (linkedStepText) {
