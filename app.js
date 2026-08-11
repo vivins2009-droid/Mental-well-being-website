@@ -2670,6 +2670,73 @@ function bindDateHints() {
   syncDateHints();
 }
 
+let cyberSelectDocumentListenersBound = false;
+
+function bindCyberSelects() {
+  document.querySelectorAll("select").forEach((select) => {
+    if (select.dataset.cyberBound === "true") return;
+    const parent = select.parentElement;
+    if (!parent) return;
+
+    select.dataset.cyberBound = "true";
+    parent.classList.add("cyber-select-wrapper");
+
+    select.addEventListener("mousedown", (event) => {
+      if (event.button !== 0 || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+
+      const existingPopover = parent.querySelector(".cyber-select-popover");
+      if (existingPopover) {
+        existingPopover.remove();
+        select.blur();
+        return;
+      }
+
+      closeAllCyberSelects();
+
+      const options = [...select.options];
+      if (!options.length) return;
+
+      const popover = document.createElement("div");
+      popover.className = "cyber-select-popover";
+
+      options.forEach((opt) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = `cyber-select-option ${opt.selected ? "is-selected" : ""}`;
+        item.innerHTML = `<span>${escapeHtml(opt.text)}</span> ${opt.selected ? '<span class="selected-check">✓</span>' : ''}`;
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          select.value = opt.value;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          select.dispatchEvent(new Event("input", { bubbles: true }));
+          popover.remove();
+          select.blur();
+        });
+        popover.append(item);
+      });
+
+      parent.appendChild(popover);
+    });
+  });
+
+  if (!cyberSelectDocumentListenersBound) {
+    document.addEventListener("click", (event) => {
+      if (event.target.closest(".cyber-select-wrapper") || event.target.tagName === "SELECT") return;
+      closeAllCyberSelects();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeAllCyberSelects();
+    });
+    cyberSelectDocumentListenersBound = true;
+  }
+}
+
+function closeAllCyberSelects() {
+  document.querySelectorAll(".cyber-select-popover").forEach((p) => p.remove());
+}
+
 function requireTaskDeadline(form) {
   const field = form.querySelector("[data-required-date]");
   const input = field?.querySelector("[data-date-input]");
@@ -3114,6 +3181,7 @@ function render() {
   render21DayHabitsSection();
   renderNotificationsSection();
   bindDateHints();
+  bindCyberSelects();
   syncDateHints();
 }
 
@@ -3553,6 +3621,7 @@ async function initializeApp() {
   runPageArrival();
   bindForms();
   bindDateHints();
+  bindCyberSelects();
   bindSaveGuidance();
   bindDashboardSectionLinks();
   bindLinkMotion();

@@ -98,9 +98,8 @@
               <h2>Task quick access</h2>
             </div>
           </div>
-          <p class="form-guidance">Add homework, chores, errands, or any one-off task.</p>
+          <p class="form-guidance">Add homework, chores, errands, or any one-off task. Deadlines decide where linked tasks appear.</p>
           <form class="entry-form task-entry-form" data-task-form>
-            <p class="task-link-guidance full-width">Deadlines decide where a linked task appears. Linking to a habit is optional, and works best when the task belongs to a daily routine.</p>
             <label>
               Task title
               <input name="title" type="text" placeholder="Example: Physics homework" required>
@@ -132,11 +131,10 @@
               <select name="supportedStepKey" data-task-goal-support aria-label="Link task to goal step">
                 <option value="">No goal step selected</option>
               </select>
-              <small>Optional. Use this for goal steps that are better completed as one-off tasks.</small>
             </label>
             <label class="full-width">
               Optional details
-              <textarea name="subtext" rows="4" placeholder="Example: Finish worksheet 4 and revise forces."></textarea>
+              <textarea name="subtext" rows="3" placeholder="Example: Finish worksheet 4 and revise forces."></textarea>
             </label>
             <button class="text-button" type="submit">Save task</button>
           </form>
