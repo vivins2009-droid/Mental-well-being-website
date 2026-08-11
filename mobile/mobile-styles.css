@@ -1047,3 +1047,111 @@ textarea {
   padding-top: 14px !important;
   margin-top: 14px !important;
 }
+
+/* 21-Day Habit Psychology Protocol Panel Styling */
+.habit-21day-panel {
+  background: linear-gradient(145deg, rgba(2, 18, 28, 0.95), rgba(4, 30, 45, 0.88)), #020b12 !important;
+  border: 1px solid rgba(0, 246, 255, 0.32) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(0, 246, 255, 0.12), inset 0 1px 0 rgba(233, 253, 255, 0.14) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.habit-21day-empty-visual {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  padding: 16px !important;
+  background: rgba(0, 246, 255, 0.04) !important;
+  border: 1px solid rgba(0, 246, 255, 0.2) !important;
+  border-radius: 14px !important;
+}
+
+.empty-visual-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.psych-badge-chip {
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  color: #00ffd0 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+  background: rgba(0, 255, 208, 0.12) !important;
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(0, 255, 208, 0.3) !important;
+}
+
+.xp-tag {
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  color: #00f6ff !important;
+  background: rgba(0, 246, 255, 0.12) !important;
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(0, 246, 255, 0.3) !important;
+}
+
+.empty-visual-desc {
+  font-size: 0.84rem !important;
+  color: #94a3b8 !important;
+  margin: 0 !important;
+  line-height: 1.45 !important;
+}
+
+.habit-21day-timeline-preview {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  padding: 12px 14px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(0, 246, 255, 0.15) !important;
+  margin: 4px 0 !important;
+}
+
+.timeline-step {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+.timeline-step .step-num {
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  color: #7caab4 !important;
+}
+
+.timeline-step.active-step .step-num {
+  color: #00f6ff !important;
+  text-shadow: 0 0 10px rgba(0, 246, 255, 0.8) !important;
+}
+
+.timeline-step.master-step .step-num {
+  color: #00ffd0 !important;
+}
+
+.timeline-step .step-label {
+  font-size: 0.65rem !important;
+  color: #64748b !important;
+}
+
+.timeline-connector {
+  flex: 1 !important;
+  height: 2px !important;
+  background: rgba(0, 246, 255, 0.2) !important;
+  margin: 0 6px !important;
+}
+
+.start-21day-btn {
+  width: 100% !important;
+  padding: 12px !important;
+  font-size: 0.88rem !important;
+  font-weight: 800 !important;
+  border-radius: 12px !important;
+}
