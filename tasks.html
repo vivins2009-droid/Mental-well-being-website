@@ -107,12 +107,7 @@
             </label>
             <div class="form-field date-field deadline-date-field" data-date-field data-required-date>
               <label for="task-deadline-full">Deadline</label>
-              <button class="date-trigger" type="button" data-date-trigger aria-haspopup="dialog" aria-expanded="false" aria-describedby="task-date-hint-full">
-                <span class="date-value" data-date-value id="task-date-hint-full">Pick a deadline</span>
-                <span class="date-icon" aria-hidden="true"></span>
-              </button>
-              <input id="task-deadline-full" name="deadline" type="hidden" data-date-input>
-              <div class="date-popover" data-date-popover hidden role="dialog" aria-label="Choose task deadline"></div>
+              <input id="task-deadline-full" name="deadline" type="date" class="custom-date-picker" data-date-input aria-label="Choose task deadline">
             </div>
             <label>
               Task type
