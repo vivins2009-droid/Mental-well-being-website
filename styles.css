@@ -1815,14 +1815,14 @@ h2 {
 
 .task-entry-form {
   display: grid;
-  grid-template-columns: minmax(180px, 1.4fr) minmax(150px, 1fr) minmax(140px, 0.9fr) minmax(150px, 1fr) minmax(150px, 1fr);
-  align-items: end;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px 14px;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .task-entry-form {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1830,10 +1830,21 @@ h2 {
 .task-entry-form .form-field {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 6px;
   min-width: 0;
-  height: 100%;
+}
+
+.task-entry-form .full-width,
+.task-entry-form button[type="submit"] {
+  grid-column: 1 / -1 !important;
+}
+
+.task-entry-form button[type="submit"] {
+  width: auto;
+  min-width: 180px;
+  justify-self: start;
+  margin-top: 4px;
 }
 
 .entry-form label,
