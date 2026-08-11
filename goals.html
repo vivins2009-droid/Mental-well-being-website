@@ -121,7 +121,12 @@
             </label>
             <div class="form-field date-field" data-date-field>
               <label for="goal-deadline-full">Deadline</label>
-              <input id="goal-deadline-full" name="deadline" type="date" class="custom-date-picker" data-date-input aria-label="Choose deadline">
+              <button class="date-trigger" type="button" data-date-trigger aria-haspopup="dialog" aria-expanded="false" aria-describedby="goal-date-hint-full">
+                <span class="date-value" data-date-value id="goal-date-hint-full">Pick a deadline</span>
+                <span class="date-icon" aria-hidden="true"></span>
+              </button>
+              <input id="goal-deadline-full" name="deadline" type="hidden" data-date-input>
+              <div class="date-popover" data-date-popover hidden role="dialog" aria-label="Choose deadline"></div>
             </div>
             <label>
               Why is this goal important?
