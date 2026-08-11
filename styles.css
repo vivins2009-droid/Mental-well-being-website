@@ -1952,6 +1952,23 @@ select option:hover {
   color: var(--mint, #00f6ff) !important;
 }
 
+/* Prevent parent card panel from clipping open cyber select popovers */
+.panel:has(.has-open-cyber-select),
+.panel.has-open-cyber-select-panel,
+.entry-form:has(.has-open-cyber-select),
+.entry-form.has-open-cyber-select-panel,
+.command-panel:has(.has-open-cyber-select),
+.command-panel.has-open-cyber-select-panel,
+.add-habit-panel:has(.has-open-cyber-select),
+.add-habit-panel.has-open-cyber-select-panel {
+  overflow: visible !important;
+}
+
+.end-day-reminder:empty,
+.end-day-reminder[hidden] {
+  display: none !important;
+}
+
 /* Custom Cyber Dropdown Popover styled like Screenshot 3 */
 .cyber-select-wrapper {
   position: relative;

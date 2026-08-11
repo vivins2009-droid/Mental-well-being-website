@@ -2669,6 +2669,7 @@ function bindCyberSelects() {
       closeAllCyberSelects();
 
       parent.classList.add("has-open-cyber-select");
+      parent.closest(".panel, article, section, .entry-form")?.classList.add("has-open-cyber-select-panel");
 
       const options = [...select.options];
       if (!options.length) return;
@@ -2712,6 +2713,7 @@ function bindCyberSelects() {
 function closeAllCyberSelects() {
   document.querySelectorAll(".cyber-select-popover").forEach((p) => p.remove());
   document.querySelectorAll(".cyber-select-wrapper").forEach((w) => w.classList.remove("has-open-cyber-select"));
+  document.querySelectorAll(".has-open-cyber-select-panel").forEach((el) => el.classList.remove("has-open-cyber-select-panel"));
 }
 
 function requireTaskDeadline(form) {
