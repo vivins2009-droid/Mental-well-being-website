@@ -53,6 +53,46 @@ function isProUser() {
   return true;
 }
 
+function launchConfetti(x, y) {
+  const colors = ["#00ffd0", "#00f6ff", "#ffffff", "#a78bfa", "#fbbf24"];
+  const count = 22;
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement("span");
+    dot.style.cssText = `
+      position: fixed;
+      left: ${x}px;
+      top: ${y}px;
+      width: ${4 + Math.random() * 5}px;
+      height: ${4 + Math.random() * 5}px;
+      border-radius: 50%;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      pointer-events: none;
+      z-index: 99999;
+      transform: translate(-50%,-50%);
+      opacity: 1;
+      transition: none;
+    `;
+    document.body.appendChild(dot);
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+    const speed = 60 + Math.random() * 80;
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed - 40;
+    let startTime = null;
+    const duration = 700 + Math.random() * 300;
+    function animate(time) {
+      if (!startTime) startTime = time;
+      const t = (time - startTime) / duration;
+      if (t >= 1) { dot.remove(); return; }
+      const ease = 1 - t;
+      dot.style.left = (x + vx * t) + "px";
+      dot.style.top  = (y + vy * t + 120 * t * t) + "px";
+      dot.style.opacity = String(ease * ease);
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }
+}
+
 function unlockProAccount(code = "") {
   localStorage.setItem("planwell_pro_unlocked", "true");
   window.PLANWELL_IS_PRO = true;
@@ -880,13 +920,27 @@ function goalStepOptions() {
       step,
       index,
       value: `${goal.id}:${step.id}`,
-      label: `${goal.title} - Step ${index + 1}: ${step.text}`
+      label: `${goal.title} — Step ${index + 1}: ${step.text}`
     }))
   );
 }
 
+function goalOnlyOptions() {
+  return state.goals.map((goal) => ({
+    goal,
+    value: `goal-only:${goal.id}`,
+    label: goal.title
+  }));
+}
+
 function parseGoalStepValue(value) {
-  const [goalId = "", stepId = ""] = String(value || "").split(":");
+  const str = String(value || "");
+  if (str.startsWith("goal-only:")) {
+    const goalId = str.replace("goal-only:", "");
+    const goal = state.goals.find((g) => g.id === goalId);
+    return goal ? { goalId: goal.id, stepId: "" } : { goalId: "", stepId: "" };
+  }
+  const [goalId = "", stepId = ""] = str.split(":");
   const { goal, step } = findGoalStep(goalId, stepId);
   return goal && step ? { goalId: goal.id, stepId: step.id } : { goalId: "", stepId: "" };
 }
@@ -1103,10 +1157,18 @@ function goalRow(goal, index) {
     <div class="goal-meta">
       <strong>${progress}%</strong>
       <span>${leftLabel}</span>
+      <button class="habit-reminder-badge" type="button" data-add-goal-habit="${goal.id}" title="Go to Habits page and link a habit to this goal">Add to Habits &#8599;</button>
       <button class="ghost-button edit-item-button" type="button" data-edit-goal="${goal.id}">Edit</button>
       <button class="delete-button" type="button" data-delete-goal="${goal.id}">Delete</button>
     </div>
   `;
+  row.querySelector("[data-add-goal-habit]")?.addEventListener("click", () => {
+    const base = window.location.pathname.includes("/mobile/") ? "../habits.html" : "habits.html";
+    const params = new URLSearchParams();
+    params.set("linkedGoalId", goal.id);
+    params.set("linkedGoal", goal.title);
+    window.location.href = `${base}?${params.toString()}`;
+  });
   row.querySelector("[data-edit-goal]")?.addEventListener("click", () => {
     editingGoalId = goal.id;
     render();
@@ -1115,6 +1177,7 @@ function goalRow(goal, index) {
     input.addEventListener("change", () => {
       const step = goal.steps.find((item) => item.id === input.dataset.step);
       if (step) step.done = input.checked;
+      if (input.checked) { const r = input.getBoundingClientRect(); launchConfetti(r.left + r.width / 2, r.top + r.height / 2); }
       saveAndRender();
     });
   });
@@ -2129,6 +2192,10 @@ function dailyHabitRow(habit, key) {
       setHabitDone(match, key, !done);
       openReflectionKey = done ? reflectionEditKey(habit.id, key) : "";
     }
+    if (!done) {
+      const btn = row.querySelector("[data-toggle-habit]");
+      if (btn) { const r = btn.getBoundingClientRect(); launchConfetti(r.left + r.width / 2, r.top + r.height / 2); }
+    }
     saveAndRender();
   });
   row.querySelector("[data-reflect-missed]")?.addEventListener("click", () => {
@@ -2919,10 +2986,12 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
     </div>
 
     <div class="micro-step-col habit-reminder-col">
-      <button type="button" class="habit-reminder-badge" data-go-to-habits title="Click to set up this step as a habit on the Habits page">
+      <button type="button" class="habit-reminder-badge" data-go-to-habits style="display:none;" title="Link this step to a habit on the Habits page">
         <span class="reminder-icon"></span>
-        <span>Add to Habits ↗</span>
+        <span>Add to Habits &#8599;</span>
       </button>
+      <button type="button" class="save-step-btn" data-save-step title="Save this micro-step">Save Step</button>
+      <span class="step-saved-label" style="display:none; color:#00ffd0; font-size:0.78rem; font-weight:700;">Saved</span>
     </div>
 
     <button class="ghost-button micro-step-remove" type="button" data-remove-micro-step aria-label="Remove step ${index + 1}">Remove</button>
@@ -2932,6 +3001,21 @@ function makeMicroStepRow(form, entry = {}, index = 0) {
     if (event.key !== "Enter") return;
     event.preventDefault();
     addMicroStepRow(form, row);
+  });
+
+  // Save Step button
+  row.querySelector("[data-save-step]")?.addEventListener("click", () => {
+    const goToHabitsBtn = row.querySelector("[data-go-to-habits]");
+    const savedLabel = row.querySelector(".step-saved-label");
+    const saveBtn = row.querySelector("[data-save-step]");
+    syncMicroStepBackingField(row.closest("form") || row.closest("[data-goal-form]"));
+    if (goToHabitsBtn) goToHabitsBtn.style.display = "";
+    if (savedLabel) {
+      savedLabel.style.display = "";
+      setTimeout(() => { savedLabel.style.display = "none"; }, 1500);
+    }
+    if (saveBtn) saveBtn.textContent = "Saved";
+    setTimeout(() => { if (saveBtn) saveBtn.textContent = "Save Step"; }, 1500);
   });
 
   row.querySelector("[data-go-to-habits]")?.addEventListener("click", () => {
@@ -3141,31 +3225,53 @@ function ensureGoalSupportPicker(form) {
   if (form.querySelector("[data-goal-step-support-field]")) return;
   const actions = form.querySelector(".form-actions") || form.querySelector('button[type="submit"]')?.parentElement;
   if (!actions) return;
-  const field = document.createElement("label");
+  const field = document.createElement("div");
   field.className = "goal-support-field";
   field.dataset.goalStepSupportField = "";
   field.innerHTML = `
-    Supports goal step
-    <select name="supportedStepKey" data-goal-step-support></select>
-    <small>Optional. Use this when a habit helps a specific goal milestone.</small>
+    <label class="goal-support-label">
+      Link to a Goal
+      <select name="supportedGoalKey" data-goal-only-support>
+        <option value="">No goal selected</option>
+      </select>
+      <small>Connect this habit directly to a goal (e.g. Gym Bulk — no steps needed).</small>
+    </label>
+    <label class="goal-support-label" style="margin-top:10px;">
+      Link to a specific Micro-Step
+      <select name="supportedStepKey" data-goal-step-support>
+        <option value="">No micro-step selected</option>
+      </select>
+      <small>Optional. Overrides goal link above if a specific milestone is chosen.</small>
+    </label>
   `;
   actions.before(field);
 }
 
 function renderGoalSupportPickers() {
-  const options = goalStepOptions();
+  const goalOptions = goalOnlyOptions();
+  const stepOptions = goalStepOptions();
   document.querySelectorAll("[data-habit-form]").forEach((form) => {
     ensureGoalSupportPicker(form);
-    const select = form.querySelector("[data-goal-step-support]");
-    if (!select) return;
-    const previous = select.value;
-    select.innerHTML = `
-      <option value="">No goal step selected</option>
-      ${options.map((option) => `
-        <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>
-      `).join("")}
-    `;
-    select.value = options.some((option) => option.value === previous) ? previous : "";
+
+    const goalSelect = form.querySelector("[data-goal-only-support]");
+    if (goalSelect) {
+      const prev = goalSelect.value;
+      goalSelect.innerHTML = `
+        <option value="">No goal selected</option>
+        ${goalOptions.map((opt) => `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join("")}
+      `;
+      goalSelect.value = goalOptions.some((opt) => opt.value === prev) ? prev : "";
+    }
+
+    const stepSelect = form.querySelector("[data-goal-step-support]");
+    if (stepSelect) {
+      const prev = stepSelect.value;
+      stepSelect.innerHTML = `
+        <option value="">No micro-step selected</option>
+        ${stepOptions.map((opt) => `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join("")}
+      `;
+      stepSelect.value = stepOptions.some((opt) => opt.value === prev) ? prev : "";
+    }
   });
 }
 
@@ -3217,18 +3323,13 @@ function bindForms() {
     ensureGoalSupportPicker(habitForm);
     habitForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      if (!isProUser() && state.habits.length >= 3) {
-        showPaywallModal({ feature: "Daily Habits", limit: 3 });
-        return;
-      }
       const form = new FormData(habitForm);
-      const support = parseGoalStepValue(form.get("supportedStepKey"));
-      if (!isProUser() && (support.goalId || support.stepId)) {
-        const currentLinkedHabits = state.habits.filter(h => h.supportedGoalId || h.supportedStepId).length;
-        if (currentLinkedHabits >= 3) {
-          showPaywallModal({ feature: "Micro Success Steps Linked to Habits", limit: "3 Max on Free Plan" });
-          return;
-        }
+      // Micro-step link takes priority; fall back to goal-only link
+      const stepRaw = form.get("supportedStepKey");
+      const goalRaw = form.get("supportedGoalKey");
+      let support = parseGoalStepValue(stepRaw);
+      if (!support.goalId && goalRaw) {
+        support = parseGoalStepValue(goalRaw);
       }
       state.habits.push(makeHabit(
         form.get("name"),
@@ -3785,28 +3886,44 @@ async function initializeApp() {
     evaluateRemindersAndDeadlines();
   }, 60000);
 
-  // Auto-fill habit form if arriving from goal step routine click
+  // Auto-fill habit form if arriving from a goal's "Add to Habits" button
   const urlParams = new URLSearchParams(window.location.search);
+  const linkedGoalId    = urlParams.get("linkedGoalId");
   const linkedGoalTitle = urlParams.get("linkedGoal");
-  const linkedStepText = urlParams.get("linkedStep");
-  if (linkedGoalTitle && document.querySelector("[data-habit-form]")) {
+  const linkedStepText  = urlParams.get("linkedStep");
+  if ((linkedGoalId || linkedGoalTitle) && document.querySelector("[data-habit-form]")) {
     window.setTimeout(() => {
       const habitSection = document.querySelector("[data-habit-form]")?.closest("section, article, .panel");
       if (habitSection && !habitSection.querySelector(".linked-goal-banner")) {
         const banner = document.createElement("div");
         banner.className = "linked-goal-banner";
         banner.style.cssText = "background:rgba(0,246,255,0.08);border:1px solid rgba(0,246,255,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:#a8d7df;";
-        banner.innerHTML = `<strong style="color:#00f6ff;">Linked from goal:</strong> <em>${escapeHtml(linkedGoalTitle)}</em>${linkedStepText ? ` &mdash; step: <em>${escapeHtml(linkedStepText)}</em>` : ""}. Set the frequency, schedule and reminders below, then save.`;
+        const displayName = linkedGoalTitle || (state.goals.find(g => g.id === linkedGoalId)?.title || "");
+        banner.innerHTML = `<strong style="color:#00f6ff;">Linked from goal:</strong> <em>${escapeHtml(displayName)}</em>${linkedStepText ? ` &mdash; step: <em>${escapeHtml(linkedStepText)}</em>` : ""}. Choose a schedule below, then save your habit.`;
         habitSection.prepend(banner);
       }
       if (linkedStepText) {
         const nameInput = document.querySelector("[data-habit-form] input[name='name'], [data-habit-form] input[name='title']");
         if (nameInput && !nameInput.value) nameInput.value = linkedStepText;
       }
-      const goalSelect = document.querySelector("[data-goal-step-support]");
-      if (goalSelect) {
-        const matchOption = [...goalSelect.options].find((opt) => opt.text.toLowerCase().includes(linkedGoalTitle.toLowerCase()));
-        if (matchOption) goalSelect.value = matchOption.value;
+      // Pre-select the goal-level dropdown using goalId (precise) or title fallback
+      const goalOnlySelect = document.querySelector("[data-goal-only-support]");
+      if (goalOnlySelect) {
+        if (linkedGoalId) {
+          const exactOpt = [...goalOnlySelect.options].find((opt) => opt.value === `goal-only:${linkedGoalId}`);
+          if (exactOpt) goalOnlySelect.value = exactOpt.value;
+        } else if (linkedGoalTitle) {
+          const fuzzyOpt = [...goalOnlySelect.options].find((opt) => opt.text.toLowerCase().includes(linkedGoalTitle.toLowerCase()));
+          if (fuzzyOpt) goalOnlySelect.value = fuzzyOpt.value;
+        }
+      }
+      // If a specific step was passed, also pre-select the micro-step dropdown
+      if (linkedStepText) {
+        const stepSelect = document.querySelector("[data-goal-step-support]");
+        if (stepSelect) {
+          const matchOption = [...stepSelect.options].find((opt) => opt.text.toLowerCase().includes(linkedStepText.toLowerCase()));
+          if (matchOption) stepSelect.value = matchOption.value;
+        }
       }
     }, 400);
   }
