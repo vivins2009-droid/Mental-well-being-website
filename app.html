@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan well | Teen Progress Tracker</title>
+  <link rel="stylesheet" href="styles.css?v=task-calendar">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="app.js?v=task-calendar" defer></script>
+</head>
+<body data-page="dashboard">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <nav class="nav-list" aria-label="Main navigation">
+        <a class="nav-item active" href="#home">Home</a>
+        <a class="nav-item" href="#dashboard">Dashboard</a>
+        <a class="nav-item" href="goals.html">Goals</a>
+        <a class="nav-item" href="habits.html">Habits</a>
+        <a class="nav-item" href="tasks.html">Tasks</a>
+        <a class="nav-item" href="rewards.html">Rewards</a>
+      </nav>
+    </aside>
+
+    <main class="main-panel">
+      <section class="scroll-section home-section" id="home">
+        <div class="home-hero">
+          <div class="home-copy">
+            <p class="eyebrow">Teen goal and habit tracker</p>
+            <h1>Plan well</h1>
+            <p class="home-brief">
+              A personal progress space for teenagers to set their own goals, break them into visible steps,
+              build daily habits, and connect consistent effort to rewards. Everything starts at zero, so the
+              dashboard only reflects what the user chooses to add.
+            </p>
+            <div class="home-actions">
+              <a class="text-button link-button" href="#dashboard">Enter dashboard</a>
+              <a class="text-button link-button subtle" href="goals.html">Explore goals</a>
+            </div>
+          </div>
+
+          <div class="home-hud" aria-hidden="true">
+            <span class="hud-ring ring-one"></span>
+            <span class="hud-ring ring-two"></span>
+            <span class="hud-ring ring-three"></span>
+            <span class="hud-scan scan-one"></span>
+            <span class="hud-scan scan-two"></span>
+            <div class="hud-readout">
+              <strong data-metric="overallProgress">0%</strong>
+              <span>Progress signal</span>
+            </div>
+            <div class="hud-chip chip-goals">Goals</div>
+            <div class="hud-chip chip-habits">Habits</div>
+            <div class="hud-chip chip-rewards">Rewards</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scroll-section" id="dashboard">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Teen goal and habit tracker</p>
+            <h1>Build the week you actually want.</h1>
+          </div>
+          <div class="top-actions" style="display: flex; gap: 10px; align-items: center;">
+            <div class="today-readout" data-today-readout></div>
+            <a class="text-button link-button" href="goals.html">Add goal</a>
+            <a class="text-button link-button" href="habits.html">Add habit</a>
+
+            <div class="notification-wrapper" style="position: relative;">
+            <button class="ghost-button notification-bell compact-button" type="button" data-notification-trigger title="Notifications & Reminders" style="position: relative; font-size: 1.1rem; padding: 6px 12px; color: #00f6ff; border: 1px solid rgba(0,246,255,0.3); border-radius: 8px; background: rgba(0,246,255,0.07);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span class="notification-badge" data-notification-count hidden style="position: absolute; top: -5px; right: -5px; background: #00ffd0; color: #02070d; font-size: 9px; font-weight: bold; border-radius: 999px; padding: 2px 5px; min-width: 16px; text-align: center;">0</span>
+              </button>
+              
+              <!-- Desktop Notification Drawer -->
+              <div class="notification-drawer" data-notification-drawer hidden style="position: absolute; right: 0; top: 44px; width: 320px; background: #09131a; border: 1px solid rgba(0,246,255,0.4); border-radius: 12px; padding: 14px; z-index: 9999; box-shadow: 0 0 30px rgba(0,0,0,0.9);">
+                <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                  <strong style="font-size: 13px; color: #00f6ff;">Notifications & Reminders</strong>
+                  <button class="ghost-button compact-button" type="button" data-clear-notifications style="font-size: 11px;">Clear</button>
+                </div>
+                <div class="notification-settings-bar" style="font-size: 11px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                  <label class="toggle-label" style="display: flex; gap: 6px; align-items: center; color: #94a3b8; cursor: pointer;">
+                    <input type="checkbox" data-os-notif-toggle> Allow OS Alerts
+                  </label>
+                  <button class="ghost-button compact-button" type="button" data-test-os-notif style="font-size: 10px;">Test Alert</button>
+                </div>
+                <div class="notification-list" data-notification-list style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="dashboard-summary-console" data-dashboard-summary aria-label="Dashboard summary">
+          <div class="summary-plane" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="summary-core-zone" style="display: flex; gap: 20px; align-items: center; padding: 14px 20px;">
+            <div class="summary-core-copy" style="flex: 1;">
+              <p class="eyebrow" style="font-size: 0.65rem; margin-bottom: 4px;">Overall Core</p>
+              <div style="display: flex; align-items: baseline; gap: 12px;">
+                <h2 data-metric="overallProgress" style="font-size: 2rem; margin: 0; line-height: 1;">0%</h2>
+                <div class="progress-track" style="flex: 1; height: 6px;"><span data-bar="overallProgress"></span></div>
+              </div>
+            </div>
+            <div class="summary-core-stack" style="text-align: right;">
+              <span style="font-size: 0.65rem;">Level</span>
+              <strong data-profile-level style="display: block; font-size: 1rem;">Level 1</strong>
+              <small data-profile-xp style="font-size: 0.7rem;">0 XP</small>
+            </div>
+            <div class="summary-core-stack" style="text-align: right;">
+              <span style="font-size: 0.65rem;">Progress Bank</span>
+              <strong data-metric="rewardProgress" style="display: block; font-size: 1rem;">0 XP earned</strong>
+              <small data-summary-reward-status style="font-size: 0.7rem;">No XP yet</small>
+            </div>
+          </div>
+
+          <div class="summary-lanes">
+            <!-- 1st: Tasks (Action Lane) -->
+            <article class="summary-lane tasks-lane" data-summary-tasks>
+              <div class="summary-lane-visual task-stack-visual" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Tasks</p>
+                    <h2>Action lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="tasks.html" data-dashboard-section-link>Go to tasks</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>Open tasks</span><strong data-metric="openTasks">0</strong></div>
+                  <div class="summary-cell"><span>Done</span><strong data-metric="tasksDone">0</strong></div>
+                  <div class="summary-cell"><span>Linked habits</span><strong data-metric="linkedTasks">0</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Next task</span>
+                    <strong data-summary-next-task>No tasks yet</strong>
+                    <small data-summary-task-note>Add one-off work here</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- 2nd: Habits (Cadence Lane) -->
+            <article class="summary-lane habits-lane" data-summary-habits>
+              <div class="summary-lane-visual cadence-visual" data-command-grid="habitScore" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Habits</p>
+                    <h2>Cadence lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="habits.html" data-dashboard-section-link>Go to habits</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>Habit score</span><strong data-metric="habitScore">0%</strong></div>
+                  <div class="summary-cell"><span>Done today</span><strong data-metric="checksCompleted">0</strong></div>
+                  <div class="summary-cell"><span>Best streak</span><strong data-metric="bestStreak">0 days</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Missed today</span>
+                    <strong data-metric="missedToday">0</strong>
+                    <small data-summary-habit-note>No habits yet</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- 3rd: Goals (Mission Lane) -->
+            <article class="summary-lane goals-lane" data-summary-goals>
+              <div class="summary-lane-visual checkpoint-visual" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Goals</p>
+                    <h2>Mission lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="goals.html" data-dashboard-section-link>Go to goals</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>Active</span><strong data-metric="activeGoals">0</strong></div>
+                  <div class="summary-cell"><span>Achieved</span><strong data-metric="goalsAchieved">0 / 0</strong></div>
+                  <div class="summary-cell"><span>Due soon</span><strong data-metric="dueSoon">0</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Top priority</span>
+                    <strong data-summary-top-goal>No goals yet</strong>
+                    <small data-summary-goal-note>Waiting for your first goal</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- 4th: Rewards (Unlock Lane) -->
+            <article class="summary-lane rewards-lane" data-summary-rewards>
+              <div class="summary-lane-visual reward-crystal" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="summary-lane-main">
+                <div class="summary-lane-heading">
+                  <div>
+                    <p class="eyebrow">Rewards</p>
+                    <h2>Unlock lane</h2>
+                  </div>
+                  <a class="text-button link-button compact-button" href="rewards.html" data-dashboard-section-link>Go to rewards</a>
+                </div>
+                <div class="summary-cell-grid">
+                  <div class="summary-cell"><span>XP</span><strong data-metric="weeklyXp">0</strong></div>
+                  <div class="summary-cell"><span>Next unlock</span><strong data-metric="nextUnlock">0%</strong></div>
+                  <div class="summary-cell"><span>Level</span><strong data-profile-level>Level 1</strong></div>
+                  <div class="summary-cell wide-cell">
+                    <span>Reward status</span>
+                    <strong data-summary-reward-status>No XP yet</strong>
+                    <small>Rewards editing comes later</small>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- 21-Day Habit Commitment Protocol Widget -->
+        <article class="panel command-panel in-page-console habit-21day-panel" style="margin-top: 24px;" aria-label="21 Day Habit Protocol">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Psychology Protocol</p>
+              <h2>21-Day Habit Commitment</h2>
+            </div>
+          </div>
+          <div class="habit-21day-widget-body">
+            <p class="section-subtext" style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 14px;">
+              Brain research shows it takes 21 consecutive days to build a permanent neural habit loop. Complete 21 consecutive days for any habit to unlock the <strong>21-Day Master Badge</strong> and earn a massive <strong>+500 XP Boost</strong>!
+            </p>
+            <div class="habit-21day-list" data-21day-habits-container></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
