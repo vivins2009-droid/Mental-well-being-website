@@ -50,7 +50,7 @@ if (new URLSearchParams(window.location.search).get("reset") === "1") {
 const state = createEmptyState();
 
 function isProUser() {
-  return Boolean(window.PLANWELL_IS_PRO || localStorage.getItem("planwell_pro_unlocked") === "true");
+  return true;
 }
 
 function unlockProAccount(code = "") {
@@ -2448,13 +2448,8 @@ function renderAccountControls() {
     document.body.append(chip);
   }
 
-  const proStatus = isProUser();
-  const planBadgeHtml = proStatus
-    ? `<div class="user-plan-badge pro-active">Plan Well Pro Active</div>`
-    : `<div class="user-plan-badge free-active">Free Plan (1 Goal &bull; 3 Habits &bull; 3 Tasks Limit)</div>`;
-
   chip.innerHTML = `
-    <button class="profile-button ${proStatus ? "is-pro" : ""}" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
+    <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
       <span class="profile-head" aria-hidden="true"></span>
       <span class="profile-shoulders" aria-hidden="true"></span>
     </button>
@@ -2462,10 +2457,9 @@ function renderAccountControls() {
       <div class="profile-menu-copy">
         <strong>${escapeHtml(authDisplayName())}</strong>
         <span>${escapeHtml(userEmail() || "Signed in")}</span>
-        ${planBadgeHtml}
+        <div class="user-plan-badge free-active">Free &amp; Unlimited Access</div>
         <em data-sync-status>${escapeHtml(syncStatus)}</em>
       </div>
-      ${!proStatus ? `<button class="btn-pro profile-upgrade-btn" type="button" onclick="showPaywallModal({ feature: 'Pro Upgrade' })" style="width:100%; margin-bottom:10px; padding:8px 12px; font-size:0.8rem; font-weight:800; border-radius:8px; border:none; cursor:pointer; background:linear-gradient(135deg,#00ffd0,#00f6ff); color:#02070d;">Upgrade to Pro</button>` : ""}
       <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
     </div>
   `;
