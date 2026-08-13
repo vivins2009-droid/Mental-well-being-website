@@ -1,54 +1,95 @@
-# Plan Well - Teen Goal and Habit Tracker
+# Plan Well - Mindful Goal Builder & Habit Tracker
 
-Plan Well is a personal productivity and progress-tracking website designed for teenagers. It helps users set their own goals, break those goals into micro steps, connect real-life routines to daily habits, capture one-off tasks, and track progress over time through a futuristic 3D dashboard interface.
+Plan Well is a goal builder and habit tracker engineered to eliminate overwhelm, connect daily routines to long-term progress, and grow together with friends and family in a responsive 3D interface.
 
-The app starts with no fake goals, habits, or tasks. Everything shown in the dashboard is based on what the signed-in user adds.
+The application starts with zero pre-loaded bloat. Everything shown in the dashboard centers around the goals, habits, and tasks added by the user.
 
-## Live Website
+---
 
-Visit the live version here:
+## Key Features
 
-[Plan Well - Teen Goal and Habit Tracker](https://planwellforyourteenlife.netlify.app/)
+### Micro-Step Goal Builder
+- Deconstruct large intimidating objectives into actionable 5-to-15 minute daily micro-steps.
+- High-contrast Purpose & Motivation Cards displaying Why This Matters, Success Metrics, and Reward on Completion.
 
-## Features
+### Date-Smart Habit Tracker
+- Schedule habits by specific weekdays (Mon-Sun) or custom daily schedules.
+- Review and update habit completion for today and the previous 6 days.
+- Guilt-free reflection log for missed routines to identify bottlenecks.
+- Integrated 21-Day Habit Challenge tracker.
 
-- Account-based login and signup with Supabase Auth
-- Google login, email/password login, and magic link login
-- Per-user cloud saving for goals, habits, tasks, categories, reflections, and XP state
-- 3D dashboard summary for goals, habits, and rewards
-- Custom goal creation with categories, deadlines, and micro steps
-- Micro steps with optional daily routine ideas
-- Daily habit checklist based on the current date
-- Recent-day habit editing for today and the previous six days
-- Reflection box for missed habits
-- Task board for one-off work that should not become a full habit or goal
-- Customizable life-area categories
-- XP and reward progress summary
-- Internal confirmation messages before deleting goals, habits, or categories
+### Goal-Habit & Task Linking
+- Connect daily habits directly to specific goal milestones so everyday actions compound into long-term achievement.
+- Connect one-off tasks to habits or goals.
 
-## Pages
+### Friends & Family Growth & Consistency
+- Share habit streaks and compare consistency leaderboards with friends and family members to stay accountable together.
 
-- `index.html` - Main dashboard and compact workspaces
-- `goals.html` - Full goal-planning page
-- `habits.html` - Full habit-tracking page
-- `tasks.html` - Full task board page
-- `rewards.html` - Rewards and XP overview
+### User Account & Cloud Sync
+- Google OAuth Sign-In and Email Authentication powered by Supabase.
+- Multi-device automatic cloud synchronization for all user data.
+- Active plan status badge displayed directly inside the user profile menu (Free Plan vs Plan Well Pro Active).
 
-## Supabase Backend Setup
+---
 
-Plan Well uses Supabase as the v1 backend. Supabase handles authentication, Google OAuth, email/password login, magic links, hosted Postgres storage, and row-level security.
+## Free Plan vs Plan Well Pro
 
-1. Create a Supabase project.
-2. In Supabase, open the SQL editor and run `supabase/schema.sql`.
-3. Enable Email auth in Supabase Auth.
-4. Enable Google OAuth in Supabase Auth and add the local and production redirect URLs.
-5. Copy your project URL and anon key into `supabase-config.js`.
-6. Deploy the updated static site.
+### Free Plan Limits
+- Up to 1 Active Goal
+- Up to 3 Daily Habits
+- Up to 3 Active Tasks
+- Up to 3 Linked Micro Success Steps to Habits
+- Past 7 Days History Log
 
-The app stores one JSON document per user in `public.user_tracker_states`. Row-level security ensures users can only read and update their own saved tracker data.
+### Plan Well Pro Benefits
+- Unlimited Active Goals
+- Unlimited Daily Habits and Tasks
+- Unlimited Goal-Habit and Task Connections
+- Multi-Device Google Account Cloud Sync
+- Friends & Family Consistency Leaderboard
+- Full 3D Streak Heatmaps & Historical Analytics
 
-## Current Status
+### Pricing Structure
+- Monthly Plan: ₹199 / month
+- Yearly Plan: ₹1,999 / year (Saves ₹389 / year)
 
-This is an early functional prototype with account-based persistence ready for Supabase configuration. The main goal is to test the user flow, data logic, and visual direction before polishing the final interface.
+---
 
-Future improvements may include a fuller reward editor, long-term analytics, and more detailed progress insights.
+## Repository Structure
+
+- `index.html` - Main Web Application Dashboard
+- `goals.html` - Micro-Step Goal Planner
+- `habits.html` - Date-Smart Habit Tracker
+- `tasks.html` - Actionable Task Board
+- `rewards.html` - XP Progress & Leaderboard Overview
+- `PlanWell-Marketing-Website/index.html` - 3D Marketing Landing Page
+- `app.js` - Core Web Application State & Logic
+- `styles.css` - Design System Tokens & Modern Styles
+- `supabase/schema.sql` - Supabase Database Schema & Row Level Security Policies
+- `server.ps1` - PowerShell Local Static Development Server
+
+---
+
+## Local Development Setup
+
+To host and test the website locally:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\server.ps1 -Port 8080
+```
+
+Access the local environments:
+- Main Web Application: http://localhost:8080/index.html
+- 3D Marketing Site: http://localhost:8080/PlanWell-Marketing-Website/index.html
+
+---
+
+## Backend & Supabase Configuration
+
+Plan Well uses Supabase for authentication, Google OAuth, hosted PostgreSQL storage, and Row-Level Security (RLS).
+
+1. Create a project at https://supabase.com
+2. In the Supabase SQL Editor, execute `supabase/schema.sql`.
+3. Enable Email & Google OAuth under Authentication -> Providers.
+4. Set Site URL and Redirect URLs under Authentication -> URL Configuration.
+5. Add Supabase URL and Anon Key to `supabase-config.js`.
