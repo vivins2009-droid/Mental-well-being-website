@@ -1,9 +1,17 @@
 create table if not exists public.user_tracker_states (
   user_id uuid primary key references auth.users(id) on delete cascade,
   data jsonb not null default '{}'::jsonb,
+  is_pro boolean not null default false,
+  payment_ref text,
+  pro_until timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- In case table already exists, alter to add Pro columns:
+alter table public.user_tracker_states add column if not exists is_pro boolean default false;
+alter table public.user_tracker_states add column if not exists payment_ref text;
+alter table public.user_tracker_states add column if not exists pro_until timestamptz;
 
 alter table public.user_tracker_states enable row level security;
 

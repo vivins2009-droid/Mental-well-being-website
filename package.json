@@ -1,0 +1,77 @@
+{
+  "name": "plan-well-desktop",
+  "version": "1.0.0",
+  "description": "Plan Well - Teen Goal and Habit Tracker Desktop App",
+  "main": "electron-main.js",
+  "author": "Plan Well Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win nsis",
+    "build:mac": "electron-builder --mac dmg",
+    "build:all": "electron-builder --win --mac",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.planwell.app",
+    "productName": "Plan Well",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!website/**/*",
+      "!supabase/**/*",
+      "!.github/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Plan Well"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.png"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "electron": "30.0.0",
+    "electron-builder": "^24.13.0"
+  }
+}

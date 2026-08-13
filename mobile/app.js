@@ -28,6 +28,8 @@ let syncTimer = 0;
 let authInitialized = false;
 
 function isLocalPreview() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("auth") === "1") return false;
   const host = window.location.hostname;
   return (
     host === "localhost" ||

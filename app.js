@@ -28,6 +28,8 @@ let syncTimer = 0;
 let authInitialized = false;
 
 function isLocalPreview() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("auth") === "1") return false;
   const host = window.location.hostname;
   return (
     host === "localhost" ||
@@ -46,6 +48,77 @@ if (new URLSearchParams(window.location.search).get("reset") === "1") {
 }
 
 const state = createEmptyState();
+
+function isProUser() {
+  return Boolean(window.PLANWELL_IS_PRO || localStorage.getItem("planwell_pro_unlocked") === "true");
+}
+
+function unlockProAccount(code = "") {
+  localStorage.setItem("planwell_pro_unlocked", "true");
+  window.PLANWELL_IS_PRO = true;
+  document.querySelectorAll(".paywall-backdrop").forEach(el => el.remove());
+  alert("Plan Well Pro Activated Successfully! Enjoy unlimited goals, habits, analytics and cloud sync.");
+  if (typeof render === "function") render();
+}
+
+function showPaywallModal(options = {}) {
+  const existing = document.querySelector(".paywall-backdrop");
+  if (existing) existing.remove();
+
+  const feature = options.feature || "Features";
+  const limit = options.limit || "Free Limit";
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "paywall-backdrop";
+  backdrop.style.cssText = `
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(2, 7, 13, 0.85); backdrop-filter: blur(14px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    animation: fadeIn 0.25s ease-out;
+  `;
+
+  backdrop.innerHTML = `
+    <div style="
+      background: linear-gradient(135deg, rgba(8, 36, 56, 0.98), rgba(3, 15, 24, 0.98));
+      border: 1.5px solid rgba(0, 246, 255, 0.4); border-radius: 24px;
+      max-width: 520px; width: 100%; padding: 32px; color: #e9fdff;
+      box-shadow: 0 35px 90px rgba(0, 246, 255, 0.35); font-family: Inter, sans-serif;
+      position: relative; overflow: hidden;
+    ">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <span style="background:linear-gradient(90deg, #00f6ff, #00ffd0); color:#02070d; font-weight:800; font-size:0.75rem; padding:4px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:1px;">Plan Well Pro Paywall</span>
+        <button onclick="this.closest('.paywall-backdrop').remove()" style="background:none; border:none; color:#7caab4; font-size:1.6rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <h2 style="margin:0 0 8px 0; font-size:1.45rem; font-weight:800; color:#ffffff;">Unlock Pro: ${feature}</h2>
+      <p style="margin:0 0 20px 0; font-size:0.92rem; color:#7caab4; line-height:1.5;">
+        Free Plan includes <strong>1 Goal, 3 Habits, 3 Tasks</strong>, and up to <strong>3 linked micro success steps</strong>. Upgrade to <strong>Plan Well Pro</strong> to unlock unlimited goals, habits, and connections.
+      </p>
+
+      <div style="background:rgba(0, 246, 255, 0.06); border:1px solid rgba(0, 246, 255, 0.2); border-radius:14px; padding:16px; margin-bottom:24px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:0.85rem; color:#fff;">
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#00ffd0; font-weight:bold;">✔</span> Unlimited Goals</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#00ffd0; font-weight:bold;">✔</span> Unlimited Habits</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#00ffd0; font-weight:bold;">✔</span> Unlimited Tasks</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#00ffd0; font-weight:bold;">✔</span> Goal-Habit &amp; Task Linking</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#00ffd0; font-weight:bold;">✔</span> Google Account Cloud Sync</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#00ffd0; font-weight:bold;">✔</span> Friends Streak Leaderboards</div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button onclick="this.closest('.paywall-backdrop').remove(); unlockProAccount('DEMO_PRO_ACTIVATE');" style="background:linear-gradient(135deg, #00ffd0 0%, #00f6ff 100%); border:none; color:#02070d; font-weight:800; padding:16px; border-radius:14px; cursor:pointer; font-size:1rem; box-shadow:0 0 25px rgba(0, 255, 208, 0.4); text-align:center;">
+          Upgrade to Pro (₹199/mo or ₹999/yr)
+        </button>
+        <button onclick="this.closest('.paywall-backdrop').remove()" style="background:none; border:1px solid rgba(0,246,255,0.3); color:#7caab4; padding:12px; border-radius:12px; cursor:pointer; font-size:0.85rem;">
+          Continue with Free Limits
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+}
 
 function createEmptyState() {
   return { goals: [], habits: [], tasks: [], categories: [...DEFAULT_CATEGORIES] };
@@ -1018,9 +1091,13 @@ function goalRow(goal, index) {
       <strong>${escapeHtml(goal.title)}</strong>
       <span>${escapeHtml(goal.category)}${goal.deadline ? ` | deadline: ${formatDate(goal.deadline)}` : ""}</span>
       <div class="progress-track"><span style="width: ${progress}%"></span></div>
-      ${goal.why ? `<small>Why: ${escapeHtml(goal.why)}</small>` : ""}
-      ${goal.measure ? `<small>Success: ${escapeHtml(goal.measure)}</small>` : ""}
-      ${goal.reward ? `<small>Reward: ${escapeHtml(goal.reward)}</small>` : ""}
+      ${(goal.why || goal.measure || goal.reward) ? `
+        <div class="goal-motivation-box">
+          ${goal.why ? `<div class="motivation-item"><span class="motivation-label">Why:</span> <span class="motivation-value">${escapeHtml(goal.why)}</span></div>` : ""}
+          ${goal.measure ? `<div class="motivation-item"><span class="motivation-label">Success:</span> <span class="motivation-value">${escapeHtml(goal.measure)}</span></div>` : ""}
+          ${goal.reward ? `<div class="motivation-item"><span class="motivation-label">Reward:</span> <span class="motivation-value">${escapeHtml(goal.reward)}</span></div>` : ""}
+        </div>
+      ` : ""}
       ${stepsMarkup(goal)}
     </div>
     <div class="goal-meta">
@@ -2371,8 +2448,13 @@ function renderAccountControls() {
     document.body.append(chip);
   }
 
+  const proStatus = isProUser();
+  const planBadgeHtml = proStatus
+    ? `<div class="user-plan-badge pro-active">Plan Well Pro Active</div>`
+    : `<div class="user-plan-badge free-active">Free Plan (1 Goal &bull; 3 Habits &bull; 3 Tasks Limit)</div>`;
+
   chip.innerHTML = `
-    <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
+    <button class="profile-button ${proStatus ? "is-pro" : ""}" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
       <span class="profile-head" aria-hidden="true"></span>
       <span class="profile-shoulders" aria-hidden="true"></span>
     </button>
@@ -2380,8 +2462,10 @@ function renderAccountControls() {
       <div class="profile-menu-copy">
         <strong>${escapeHtml(authDisplayName())}</strong>
         <span>${escapeHtml(userEmail() || "Signed in")}</span>
+        ${planBadgeHtml}
         <em data-sync-status>${escapeHtml(syncStatus)}</em>
       </div>
+      ${!proStatus ? `<button class="btn-pro profile-upgrade-btn" type="button" onclick="showPaywallModal({ feature: 'Pro Upgrade' })" style="width:100%; margin-bottom:10px; padding:8px 12px; font-size:0.8rem; font-weight:800; border-radius:8px; border:none; cursor:pointer; background:linear-gradient(135deg,#00ffd0,#00f6ff); color:#02070d;">Upgrade to Pro</button>` : ""}
       <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
     </div>
   `;
@@ -3106,6 +3190,10 @@ function bindForms() {
     bindRoutinePlanner(goalForm);
     goalForm.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (!isProUser() && state.goals.length >= 1) {
+        showPaywallModal({ feature: "Active Goals", limit: 1 });
+        return;
+      }
       const form = new FormData(goalForm);
       const category = String(form.get("category") || fallbackCategory());
       const steps = stepsFromGoalForm(goalForm, category);
@@ -3135,8 +3223,19 @@ function bindForms() {
     ensureGoalSupportPicker(habitForm);
     habitForm.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (!isProUser() && state.habits.length >= 3) {
+        showPaywallModal({ feature: "Daily Habits", limit: 3 });
+        return;
+      }
       const form = new FormData(habitForm);
       const support = parseGoalStepValue(form.get("supportedStepKey"));
+      if (!isProUser() && (support.goalId || support.stepId)) {
+        const currentLinkedHabits = state.habits.filter(h => h.supportedGoalId || h.supportedStepId).length;
+        if (currentLinkedHabits >= 3) {
+          showPaywallModal({ feature: "Micro Success Steps Linked to Habits", limit: "3 Max on Free Plan" });
+          return;
+        }
+      }
       state.habits.push(makeHabit(
         form.get("name"),
         form.get("category"),
@@ -3159,12 +3258,24 @@ function bindForms() {
     taskForm.addEventListener("submit", (event) => {
       event.preventDefault();
       if (!requireTaskDeadline(taskForm)) return;
+      if (!isProUser() && state.tasks.length >= 3) {
+        showPaywallModal({ feature: "Active Tasks", limit: 3 });
+        return;
+      }
       const form = new FormData(taskForm);
       const support = parseGoalStepValue(form.get("supportedStepKey"));
+      const linkedHabitId = String(form.get("linkedHabitId") || "");
+      if (!isProUser() && (support.goalId || support.stepId || (linkedHabitId && linkedHabitId !== "none"))) {
+        const currentLinkedTasks = state.tasks.filter(t => t.supportedGoalId || t.supportedStepId || (t.linkedHabitId && t.linkedHabitId !== "none")).length;
+        if (currentLinkedTasks >= 3) {
+          showPaywallModal({ feature: "Tasks Linked to Goals or Habits", limit: "3 Max on Free Plan" });
+          return;
+        }
+      }
       state.tasks.push(makeTask(
         form.get("title"),
         form.get("subtext"),
-        form.get("linkedHabitId"),
+        linkedHabitId,
         form.get("deadline"),
         support.goalId,
         support.stepId,
