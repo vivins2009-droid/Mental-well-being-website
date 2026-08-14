@@ -8593,6 +8593,7 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 
 /* ─── Habit session fields (duration + time of day) ─── */
 .habit-session-field {
+  grid-column: 1 / -1;
   display: grid;
   gap: 10px;
   padding: 14px 16px;
@@ -8724,6 +8725,7 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 /* Time-of-day picker row */
 .habit-time-inputs {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 12px;
 }
@@ -8731,7 +8733,7 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 .time-part {
   display: grid;
   gap: 6px;
-  flex: 1;
+  flex: 1 1 200px;
 }
 
 .time-part > span {
