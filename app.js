@@ -2167,8 +2167,8 @@ function dailyHabitRow(habit, key) {
       <span>${escapeHtml(habit.category || fallbackCategory())} | ${formatHabitDay(key)} | ${escapeHtml(scheduleLabel(habit))}</span>
       ${durLabel || todLabel ? `
         <div class="habit-session-chips">
-          ${durLabel ? `<span class="habit-chip habit-chip--duration"><span class="chip-icon">&#9200;</span>${escapeHtml(durLabel)}</span>` : ""}
-          ${todLabel ? `<span class="habit-chip habit-chip--time"><span class="chip-icon">&#128336;</span>${escapeHtml(todLabel)}</span>` : ""}
+          ${durLabel ? `<span class="habit-chip habit-chip--duration">${escapeHtml(durLabel)}</span>` : ""}
+          ${todLabel ? `<span class="habit-chip habit-chip--time">${escapeHtml(todLabel)}</span>` : ""}
         </div>
       ` : ""}
       ${habitSupportMarkup(habit)}

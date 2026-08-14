@@ -8725,35 +8725,31 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 .habit-session-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .habit-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
+  padding: 5px 14px;
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   white-space: nowrap;
+  line-height: 1.4;
 }
 
 .habit-chip--duration {
-  background: rgba(0, 246, 255, 0.08);
-  border: 1px solid rgba(0, 246, 255, 0.28);
+  background: rgba(0, 246, 255, 0.09);
+  border: 1px solid rgba(0, 246, 255, 0.32);
   color: #a8e6ef;
 }
 
 .habit-chip--time {
-  background: rgba(167, 139, 250, 0.08);
-  border: 1px solid rgba(167, 139, 250, 0.28);
+  background: rgba(167, 139, 250, 0.09);
+  border: 1px solid rgba(167, 139, 250, 0.32);
   color: #c4b5fd;
 }
 
-.chip-icon {
-  font-size: 0.82rem;
-  line-height: 1;
-}
