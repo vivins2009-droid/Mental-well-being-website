@@ -2316,15 +2316,15 @@ function habitEditMarkup(habit) {
           <small>Optional. Pick the window when you plan to do this habit.</small>
         </div>
         <div class="habit-time-inputs">
-          <label class="time-part">
+          <div class="time-part">
             <span>Start</span>
-            <input type="time" name="timeStart" value="${escapeHtml(habit._timeStart || "")}">
-          </label>
+            <div class="custom-time-picker">${timeSelectMarkup("timeStart", parseTimeLabel(habit._timeStart || ""))}</div>
+          </div>
           <span class="time-range-sep">to</span>
-          <label class="time-part">
+          <div class="time-part">
             <span>End</span>
-            <input type="time" name="timeEnd" value="${escapeHtml(habit._timeEnd || "")}">
-          </label>
+            <div class="custom-time-picker">${timeSelectMarkup("timeEnd", parseTimeLabel(habit._timeEnd || ""))}</div>
+          </div>
         </div>
       </div>
     </form>
@@ -2360,8 +2360,8 @@ function bindHabitEditControls(row, habit) {
     const editHours = parseInt(data.get("durationHours") || "0", 10) || 0;
     const editMins  = parseInt(data.get("durationMins") || "0", 10) || 0;
     habit.durationMinutes = editHours * 60 + editMins;
-    const editStart = String(data.get("timeStart") || "").trim();
-    const editEnd   = String(data.get("timeEnd") || "").trim();
+    const editStart = readTimeFromParts(data, "timeStart");
+    const editEnd   = readTimeFromParts(data, "timeEnd");
     habit._timeStart = editStart;
     habit._timeEnd   = editEnd;
     habit.timeOfDay  = buildTimeOfDay(editStart, editEnd);
@@ -3304,11 +3304,44 @@ function formatTime24to12(time24) {
   return `${h12}:${m} ${suffix}`;
 }
 
+function parseTimeLabel(label) {
+  // Parse "5:30 PM" back to {h, m, ampm} for pre-populating the edit form
+  if (!label) return { h: "", m: "00", ampm: "PM" };
+  const match = label.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return { h: "", m: "00", ampm: "PM" };
+  return { h: String(parseInt(match[1], 10)), m: match[2], ampm: match[3].toUpperCase() };
+}
+
+function timeSelectMarkup(prefix, parsed) {
+  const hours = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const mins  = ["00","05","10","15","20","25","30","35","40","45","50","55"];
+  return `
+    <select name="${prefix}Hour" class="time-select" aria-label="Hour">
+      <option value="">--</option>
+      ${hours.map(h => `<option value="${h}" ${String(parsed.h) === String(h) ? "selected" : ""}>${h}</option>`).join("")}
+    </select>
+    <span class="time-colon" aria-hidden="true">:</span>
+    <select name="${prefix}Min" class="time-select" aria-label="Minute">
+      ${mins.map(m => `<option value="${m}" ${parsed.m === m ? "selected" : ""}>${m}</option>`).join("")}
+    </select>
+    <select name="${prefix}Ampm" class="time-select time-select--ampm" aria-label="AM or PM">
+      <option value="AM" ${parsed.ampm === "AM" ? "selected" : ""}>AM</option>
+      <option value="PM" ${parsed.ampm === "PM" ? "selected" : ""}>PM</option>
+    </select>
+  `;
+}
+
+function readTimeFromParts(formData, prefix) {
+  const h    = String(formData.get(`${prefix}Hour`) || "").trim();
+  const m    = String(formData.get(`${prefix}Min`)  || "00").trim();
+  const ampm = String(formData.get(`${prefix}Ampm`) || "AM").trim();
+  if (!h) return "";
+  return `${h}:${m} ${ampm}`;
+}
+
 function buildTimeOfDay(timeStart, timeEnd) {
-  const s = formatTime24to12(timeStart);
-  const e = formatTime24to12(timeEnd);
-  if (s && e) return `${s} – ${e}`;
-  return s || e;
+  if (timeStart && timeEnd) return `${timeStart} \u2013 ${timeEnd}`;
+  return timeStart || timeEnd || "";
 }
 
 function ensureGoalSupportPicker(form) {
@@ -3424,8 +3457,8 @@ function bindForms() {
       const durationHours   = parseInt(form.get("durationHours") || "0", 10) || 0;
       const durationMins    = parseInt(form.get("durationMins") || "0", 10) || 0;
       const totalDurationMin = durationHours * 60 + durationMins;
-      const timeStart = String(form.get("timeStart") || "").trim();
-      const timeEnd   = String(form.get("timeEnd") || "").trim();
+      const timeStart = readTimeFromParts(form, "timeStart");
+      const timeEnd   = readTimeFromParts(form, "timeEnd");
       const timeOfDay = buildTimeOfDay(timeStart, timeEnd);
       const newHabit = makeHabit(
         form.get("name"),

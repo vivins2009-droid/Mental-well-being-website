@@ -8725,16 +8725,16 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 .habit-time-inputs {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 12px;
 }
 
 .time-part {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   flex: 1;
 }
 
-.time-part span {
+.time-part > span {
   font-size: 0.72rem;
   font-weight: 700;
   color: rgba(188, 236, 242, 0.55);
@@ -8742,27 +8742,66 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
   letter-spacing: 0.04em;
 }
 
-.time-part input[type="time"] {
-  width: 100%;
-  padding: 10px 12px;
+/* Wrapper that groups the three selects into one visual block */
+.custom-time-picker {
+  display: flex;
+  align-items: center;
+  gap: 0;
   background: rgba(0, 246, 255, 0.04);
-  border: 1px solid rgba(0, 246, 255, 0.2);
+  border: 1px solid rgba(0, 246, 255, 0.22);
   border-radius: 10px;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.92rem;
-  font-weight: 600;
-  cursor: pointer;
+  overflow: hidden;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
-  box-sizing: border-box;
-  /* Style the browser time widget to fit dark theme */
-  color-scheme: dark;
 }
 
-.time-part input[type="time"]:focus {
-  outline: none;
+.custom-time-picker:focus-within {
   border-color: rgba(0, 246, 255, 0.55);
-  box-shadow: 0 0 0 3px rgba(0, 246, 255, 0.10);
+  box-shadow: 0 0 0 3px rgba(0, 246, 255, 0.09);
+}
+
+.time-select {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 6px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(0, 246, 255, 0.12);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: center;
+  outline: none;
+}
+
+.time-select:last-child {
+  border-right: none;
+}
+
+/* AM/PM selector — narrower and slightly tinted */
+.time-select--ampm {
+  flex: 0 0 auto;
+  width: 58px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: rgba(0, 246, 255, 0.85);
+  background: rgba(0, 246, 255, 0.05);
+  border-left: 1px solid rgba(0, 246, 255, 0.16);
+  border-right: none;
+}
+
+/* Colon divider inside the picker */
+.time-colon {
+  font-size: 1rem;
+  font-weight: 900;
+  color: rgba(0, 246, 255, 0.4);
+  padding: 0 2px;
+  user-select: none;
+  flex-shrink: 0;
 }
 
 .time-range-sep {

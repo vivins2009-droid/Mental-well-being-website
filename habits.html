@@ -100,15 +100,53 @@
               <small>Optional &mdash; pick the window when you plan to do this habit.</small>
             </div>
             <div class="habit-time-inputs">
-              <label class="time-part">
+              <div class="time-part">
                 <span>Start</span>
-                <input type="time" name="timeStart">
-              </label>
+                <div class="custom-time-picker">
+                  <select name="timeStartHour" class="time-select" aria-label="Start hour">
+                    <option value="">--</option>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                    <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                    <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                  </select>
+                  <span class="time-colon" aria-hidden="true">:</span>
+                  <select name="timeStartMin" class="time-select" aria-label="Start minute">
+                    <option value="00">00</option><option value="05">05</option><option value="10">10</option>
+                    <option value="15">15</option><option value="20">20</option><option value="25">25</option>
+                    <option value="30">30</option><option value="35">35</option><option value="40">40</option>
+                    <option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                  </select>
+                  <select name="timeStartAmpm" class="time-select time-select--ampm" aria-label="Start AM or PM">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
               <span class="time-range-sep">to</span>
-              <label class="time-part">
+              <div class="time-part">
                 <span>End</span>
-                <input type="time" name="timeEnd">
-              </label>
+                <div class="custom-time-picker">
+                  <select name="timeEndHour" class="time-select" aria-label="End hour">
+                    <option value="">--</option>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                    <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                    <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                  </select>
+                  <span class="time-colon" aria-hidden="true">:</span>
+                  <select name="timeEndMin" class="time-select" aria-label="End minute">
+                    <option value="00">00</option><option value="05">05</option><option value="10">10</option>
+                    <option value="15">15</option><option value="20">20</option><option value="25">25</option>
+                    <option value="30">30</option><option value="35">35</option><option value="40">40</option>
+                    <option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                  </select>
+                  <select name="timeEndAmpm" class="time-select time-select--ampm" aria-label="End AM or PM">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
           <div class="form-actions">
