@@ -266,22 +266,22 @@ function initMockupTabs() {
         </div>
       </div>
     `,
-    social: `
+    rewards: `
       <div class="mockup-sidebar">
         <div class="mockup-menu-item">Dashboard</div>
         <div class="mockup-menu-item">My Goals (1)</div>
         <div class="mockup-menu-item">Daily Habits (3)</div>
-        <div class="mockup-menu-item active">Friends Leaderboard</div>
+        <div class="mockup-menu-item active">Rewards & Level</div>
       </div>
       <div class="mockup-content">
-        <h3 style="font-size:1.15rem; color:#00ffd0; margin-bottom:8px;">Friends &amp; Family Consistency Leaderboard</h3>
+        <h3 style="font-size:1.15rem; color:var(--mint); margin-bottom:8px;">Gamified Rewards &amp; XP Level</h3>
         <div style="display:flex; justify-content:space-between; background:rgba(0,255,208,0.1); padding:10px 14px; border-radius:10px; border:1px solid var(--mint); margin-bottom:8px; font-size:0.85rem;">
-          <span>#1 <strong>You (Alex)</strong> &bull; 6 Day Streak</span>
+          <span>Current Rank: <strong>Level 3 Achieved</strong> &bull; 6 Day Streak</span>
           <span style="color:#00ffd0; font-weight:bold;">1,240 XP</span>
         </div>
         <div style="display:flex; justify-content:space-between; background:rgba(6,24,38,0.8); padding:10px 14px; border-radius:10px; border:1px solid var(--panel-border); font-size:0.85rem;">
-          <span>#2 <strong>Sarah M.</strong> &bull; 5 Day Streak</span>
-          <span style="color:#7caab4;">1,080 XP</span>
+          <span>Unlocked Reward: <strong>Weekend Gaming Session</strong></span>
+          <span style="color:#00f6ff;">Claimed ✓</span>
         </div>
       </div>
     `
