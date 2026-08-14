@@ -3506,6 +3506,27 @@ function evaluateRemindersAndDeadlines() {
     return left !== null && left >= 0 && left <= 2 && goalProgress(g) < 100;
   });
 
+  // Check scheduled habit start time for real-time OS alert
+  const now = new Date();
+  const current12h = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toUpperCase();
+  const currentKey = `planwell_habit_notif_${dateToValue(now)}_${current12h}`;
+  if (!localStorage.getItem(currentKey)) {
+    const timeMatchedHabits = state.habits.filter((h) => {
+      const startTime = (h._timeStart || (h.timeOfDay ? h.timeOfDay.split("\u2013")[0]?.trim() : "") || "").toUpperCase();
+      return startTime && startTime === current12h;
+    });
+    if (timeMatchedHabits.length) {
+      localStorage.setItem(currentKey, "1");
+      timeMatchedHabits.forEach((habit) => {
+        addNotification({
+          title: `Habit Time: ${habit.name}`,
+          body: `Scheduled session starting now (${current12h}). ${habit.durationMinutes ? `Duration: ${durationLabel(habit.durationMinutes)}.` : ""}`,
+          type: "habit"
+        });
+      });
+    }
+  }
+
   const todayStr = dateToValue(new Date());
   const lastCheck = localStorage.getItem("planwell_last_notif_check");
   if (lastCheck === todayStr) return;
@@ -3623,24 +3644,6 @@ function bindNotificationControls() {
         state.notificationSettings.osEnabled = false;
       }
       saveAndRender();
-    });
-  });
-
-  document.querySelectorAll("[data-test-os-notif]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      if (!("Notification" in window)) {
-        alert("Browser does not support OS notifications.");
-        return;
-      }
-      let perm = Notification.permission;
-      if (perm !== "granted") {
-        perm = await Notification.requestPermission();
-      }
-      if (perm === "granted") {
-        new Notification("Plan Well Alert!", { body: "Daily habits, task reminders, and goal deadline alerts are active." });
-      } else {
-        alert("Notification permission denied in browser.");
-      }
     });
   });
 }

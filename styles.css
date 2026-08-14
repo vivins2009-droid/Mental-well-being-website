@@ -488,9 +488,20 @@ body[data-page="rewards"] .panel {
 }
 
 .topbar {
+  position: relative;
+  z-index: 100000;
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 22px;
+}
+
+.notification-wrapper {
+  position: relative;
+  z-index: 100001;
+}
+
+.notification-drawer {
+  z-index: 9999999 !important;
 }
 
 .eyebrow {

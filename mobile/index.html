@@ -36,7 +36,7 @@
           </button>
           
           <!-- Mobile Notification Drawer -->
-          <div class="notification-drawer mobile-drawer" data-notification-drawer hidden style="position: absolute; right: 0; top: 40px; width: 280px; background: #09131a; border: 1px solid rgba(0,246,255,0.4); border-radius: 12px; padding: 12px; z-index: 10001; box-shadow: 0 8px 30px rgba(0,0,0,0.95);">
+          <div class="notification-drawer mobile-drawer" data-notification-drawer hidden style="position: absolute; right: 0; top: 40px; width: 280px; background: #09131a; border: 1px solid rgba(0,246,255,0.4); border-radius: 12px; padding: 12px; z-index: 9999999; box-shadow: 0 8px 30px rgba(0,0,0,0.95);">
             <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px;">
               <strong style="font-size: 12px; color: #00f6ff;">Notifications</strong>
               <button class="ghost-button compact-button" type="button" data-clear-notifications style="font-size: 10px; padding: 2px 6px;">Clear</button>
@@ -45,7 +45,6 @@
               <label class="toggle-label" style="display: flex; gap: 6px; align-items: center; color: #94a3b8;">
                 <input type="checkbox" data-os-notif-toggle> Allow OS Alerts
               </label>
-              <button class="ghost-button compact-button" type="button" data-test-os-notif style="font-size: 10px; padding: 2px 6px;">Test Alert</button>
             </div>
             <div class="notification-list" data-notification-list style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
           </div>
