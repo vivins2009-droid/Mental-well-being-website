@@ -73,7 +73,14 @@
             <div class="habit-duration-inputs">
               <label class="duration-part">
                 <span>Hours</span>
-                <input type="number" name="durationHours" min="0" max="23" step="1" placeholder="0">
+                <select name="durationHours">
+                  <option value="0">0 hr</option>
+                  <option value="1">1 hr</option>
+                  <option value="2">2 hr</option>
+                  <option value="3">3 hr</option>
+                  <option value="4">4 hr</option>
+                  <option value="5">5 hr</option>
+                </select>
               </label>
               <span class="duration-sep">:</span>
               <label class="duration-part">
@@ -90,9 +97,19 @@
           <div class="habit-session-field">
             <div class="habit-session-field-head">
               <strong>Time of day</strong>
-              <small>Optional &mdash; when do you plan to do this? e.g. 5:00 PM &ndash; 6:00 PM</small>
+              <small>Optional &mdash; pick the window when you plan to do this habit.</small>
             </div>
-            <input type="text" name="timeOfDay" placeholder="e.g. 5:00 PM &ndash; 6:00 PM">
+            <div class="habit-time-inputs">
+              <label class="time-part">
+                <span>Start</span>
+                <input type="time" name="timeStart">
+              </label>
+              <span class="time-range-sep">to</span>
+              <label class="time-part">
+                <span>End</span>
+                <input type="time" name="timeEnd">
+              </label>
+            </div>
           </div>
           <div class="form-actions">
             <button class="text-button" type="submit">Save habit</button>

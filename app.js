@@ -2289,7 +2289,14 @@ function habitEditMarkup(habit) {
         <div class="habit-duration-inputs">
           <label class="duration-part">
             <span>Hours</span>
-            <input type="number" name="durationHours" min="0" max="23" step="1" value="${Math.floor((habit.durationMinutes || 0) / 60)}" placeholder="0">
+            <select name="durationHours">
+              <option value="0" ${Math.floor((habit.durationMinutes || 0) / 60) === 0 ? "selected" : ""}>0 hr</option>
+              <option value="1" ${Math.floor((habit.durationMinutes || 0) / 60) === 1 ? "selected" : ""}>1 hr</option>
+              <option value="2" ${Math.floor((habit.durationMinutes || 0) / 60) === 2 ? "selected" : ""}>2 hr</option>
+              <option value="3" ${Math.floor((habit.durationMinutes || 0) / 60) === 3 ? "selected" : ""}>3 hr</option>
+              <option value="4" ${Math.floor((habit.durationMinutes || 0) / 60) === 4 ? "selected" : ""}>4 hr</option>
+              <option value="5" ${Math.floor((habit.durationMinutes || 0) / 60) === 5 ? "selected" : ""}>5 hr</option>
+            </select>
           </label>
           <span class="duration-sep">:</span>
           <label class="duration-part">
@@ -2306,9 +2313,19 @@ function habitEditMarkup(habit) {
       <div class="habit-session-field">
         <div class="habit-session-field-head">
           <strong>Time of day</strong>
-          <small>Optional. When do you plan to do this habit? e.g. 5:00 PM &ndash; 6:00 PM</small>
+          <small>Optional. Pick the window when you plan to do this habit.</small>
         </div>
-        <input type="text" name="timeOfDay" placeholder="e.g. 5:00 PM &ndash; 6:00 PM" value="${escapeHtml(habit.timeOfDay || "")}">
+        <div class="habit-time-inputs">
+          <label class="time-part">
+            <span>Start</span>
+            <input type="time" name="timeStart" value="${escapeHtml(habit._timeStart || "")}">
+          </label>
+          <span class="time-range-sep">to</span>
+          <label class="time-part">
+            <span>End</span>
+            <input type="time" name="timeEnd" value="${escapeHtml(habit._timeEnd || "")}">
+          </label>
+        </div>
       </div>
     </form>
   `;
@@ -2343,7 +2360,11 @@ function bindHabitEditControls(row, habit) {
     const editHours = parseInt(data.get("durationHours") || "0", 10) || 0;
     const editMins  = parseInt(data.get("durationMins") || "0", 10) || 0;
     habit.durationMinutes = editHours * 60 + editMins;
-    habit.timeOfDay = String(data.get("timeOfDay") || "").trim();
+    const editStart = String(data.get("timeStart") || "").trim();
+    const editEnd   = String(data.get("timeEnd") || "").trim();
+    habit._timeStart = editStart;
+    habit._timeEnd   = editEnd;
+    habit.timeOfDay  = buildTimeOfDay(editStart, editEnd);
     editingHabitId = "";
     saveAndRender();
   });
@@ -3273,6 +3294,23 @@ function durationLabel(minutes) {
   return `${m} min`;
 }
 
+function formatTime24to12(time24) {
+  if (!time24) return "";
+  const [hStr, mStr] = time24.split(":");
+  const h = parseInt(hStr, 10);
+  const m = mStr || "00";
+  const suffix = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${suffix}`;
+}
+
+function buildTimeOfDay(timeStart, timeEnd) {
+  const s = formatTime24to12(timeStart);
+  const e = formatTime24to12(timeEnd);
+  if (s && e) return `${s} – ${e}`;
+  return s || e;
+}
+
 function ensureGoalSupportPicker(form) {
   if (form.querySelector("[data-goal-step-support-field]")) return;
   const actions = form.querySelector(".form-actions") || form.querySelector('button[type="submit"]')?.parentElement;
@@ -3386,8 +3424,10 @@ function bindForms() {
       const durationHours   = parseInt(form.get("durationHours") || "0", 10) || 0;
       const durationMins    = parseInt(form.get("durationMins") || "0", 10) || 0;
       const totalDurationMin = durationHours * 60 + durationMins;
-      const timeOfDay       = String(form.get("timeOfDay") || "").trim();
-      state.habits.push(makeHabit(
+      const timeStart = String(form.get("timeStart") || "").trim();
+      const timeEnd   = String(form.get("timeEnd") || "").trim();
+      const timeOfDay = buildTimeOfDay(timeStart, timeEnd);
+      const newHabit = makeHabit(
         form.get("name"),
         form.get("category"),
         selectedScheduleDays(habitForm),
@@ -3395,7 +3435,10 @@ function bindForms() {
         support.stepId,
         totalDurationMin,
         timeOfDay
-      ));
+      );
+      newHabit._timeStart = timeStart;
+      newHabit._timeEnd   = timeEnd;
+      state.habits.push(newHabit);
       habitForm.reset();
       habitForm._scheduleDays = [...ALL_WEEKDAYS];
       const weeklyInput = habitForm.querySelector('[name="weeklyGoal"]');
