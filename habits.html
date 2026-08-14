@@ -65,6 +65,35 @@
             <div class="category-picker" data-category-picker></div>
             <small>Choose the life area this habit supports.</small>
           </label>
+          <div class="habit-session-field">
+            <div class="habit-session-field-head">
+              <strong>Session duration</strong>
+              <small>Optional &mdash; how long will this habit take each session?</small>
+            </div>
+            <div class="habit-duration-inputs">
+              <label class="duration-part">
+                <span>Hours</span>
+                <input type="number" name="durationHours" min="0" max="23" step="1" placeholder="0">
+              </label>
+              <span class="duration-sep">:</span>
+              <label class="duration-part">
+                <span>Minutes</span>
+                <select name="durationMins">
+                  <option value="0">00 min</option>
+                  <option value="15">15 min</option>
+                  <option value="30">30 min</option>
+                  <option value="45">45 min</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="habit-session-field">
+            <div class="habit-session-field-head">
+              <strong>Time of day</strong>
+              <small>Optional &mdash; when do you plan to do this? e.g. 5:00 PM &ndash; 6:00 PM</small>
+            </div>
+            <input type="text" name="timeOfDay" placeholder="e.g. 5:00 PM &ndash; 6:00 PM">
+          </div>
           <div class="form-actions">
             <button class="text-button" type="submit">Save habit</button>
           </div>

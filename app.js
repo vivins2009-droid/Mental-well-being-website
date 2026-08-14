@@ -960,7 +960,7 @@ function supportingTasksForStep(goal, step) {
   return state.tasks.filter((task) => task.supportedGoalId === goal.id && task.supportedStepId === step.id);
 }
 
-function makeHabit(name, category, scheduleDays = ALL_WEEKDAYS, supportedGoalId = "", supportedStepId = "") {
+function makeHabit(name, category, scheduleDays = ALL_WEEKDAYS, supportedGoalId = "", supportedStepId = "", durationMinutes = 0, timeOfDay = "") {
   return {
     id: uid("habit"),
     name: String(name || "").trim() || "Untitled habit",
@@ -969,6 +969,8 @@ function makeHabit(name, category, scheduleDays = ALL_WEEKDAYS, supportedGoalId 
     category: String(category || fallbackCategory()),
     supportedGoalId: String(supportedGoalId || ""),
     supportedStepId: String(supportedStepId || ""),
+    durationMinutes: Number(durationMinutes) || 0,
+    timeOfDay: String(timeOfDay || "").trim(),
     checks: [false, false, false, false, false, false, false],
     history: {}
   };
@@ -2157,10 +2159,18 @@ function dailyHabitRow(habit, key) {
     bindHabitEditControls(row, habit);
     return row;
   }
+  const durLabel  = durationLabel(habit.durationMinutes);
+  const todLabel  = habit.timeOfDay || "";
   row.innerHTML = `
     <div class="daily-habit-main">
       <strong>${escapeHtml(habit.name)}</strong>
       <span>${escapeHtml(habit.category || fallbackCategory())} | ${formatHabitDay(key)} | ${escapeHtml(scheduleLabel(habit))}</span>
+      ${durLabel || todLabel ? `
+        <div class="habit-session-chips">
+          ${durLabel ? `<span class="habit-chip habit-chip--duration"><span class="chip-icon">&#9200;</span>${escapeHtml(durLabel)}</span>` : ""}
+          ${todLabel ? `<span class="habit-chip habit-chip--time"><span class="chip-icon">&#128336;</span>${escapeHtml(todLabel)}</span>` : ""}
+        </div>
+      ` : ""}
       ${habitSupportMarkup(habit)}
       ${linkedTaskMarkup(habit, key)}
     </div>
@@ -2271,6 +2281,35 @@ function habitEditMarkup(habit) {
         <select name="supportedStepKey">${goalStepSelectMarkup(habit.supportedGoalId, habit.supportedStepId)}</select>
         <small>Optional. Use this when the habit supports a specific micro step.</small>
       </label>
+      <div class="habit-session-field">
+        <div class="habit-session-field-head">
+          <strong>Session duration</strong>
+          <small>Optional. How long do you plan to spend on this habit each session?</small>
+        </div>
+        <div class="habit-duration-inputs">
+          <label class="duration-part">
+            <span>Hours</span>
+            <input type="number" name="durationHours" min="0" max="23" step="1" value="${Math.floor((habit.durationMinutes || 0) / 60)}" placeholder="0">
+          </label>
+          <span class="duration-sep">:</span>
+          <label class="duration-part">
+            <span>Minutes</span>
+            <select name="durationMins">
+              <option value="0" ${(habit.durationMinutes || 0) % 60 === 0 ? "selected" : ""}>00 min</option>
+              <option value="15" ${(habit.durationMinutes || 0) % 60 === 15 ? "selected" : ""}>15 min</option>
+              <option value="30" ${(habit.durationMinutes || 0) % 60 === 30 ? "selected" : ""}>30 min</option>
+              <option value="45" ${(habit.durationMinutes || 0) % 60 === 45 ? "selected" : ""}>45 min</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="habit-session-field">
+        <div class="habit-session-field-head">
+          <strong>Time of day</strong>
+          <small>Optional. When do you plan to do this habit? e.g. 5:00 PM &ndash; 6:00 PM</small>
+        </div>
+        <input type="text" name="timeOfDay" placeholder="e.g. 5:00 PM &ndash; 6:00 PM" value="${escapeHtml(habit.timeOfDay || "")}">
+      </div>
     </form>
   `;
 }
@@ -2301,6 +2340,10 @@ function bindHabitEditControls(row, habit) {
     habit.weeklyGoal = habit.scheduleDays.length;
     habit.supportedGoalId = support.goalId;
     habit.supportedStepId = support.stepId;
+    const editHours = parseInt(data.get("durationHours") || "0", 10) || 0;
+    const editMins  = parseInt(data.get("durationMins") || "0", 10) || 0;
+    habit.durationMinutes = editHours * 60 + editMins;
+    habit.timeOfDay = String(data.get("timeOfDay") || "").trim();
     editingHabitId = "";
     saveAndRender();
   });
@@ -3221,6 +3264,15 @@ function scheduleLabel(habit) {
   return days.map((day) => DAYS[day]).join(", ");
 }
 
+function durationLabel(minutes) {
+  if (!minutes || minutes <= 0) return "";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h && m) return `${h} hr ${m} min`;
+  if (h) return `${h} hr`;
+  return `${m} min`;
+}
+
 function ensureGoalSupportPicker(form) {
   if (form.querySelector("[data-goal-step-support-field]")) return;
   const actions = form.querySelector(".form-actions") || form.querySelector('button[type="submit"]')?.parentElement;
@@ -3331,12 +3383,18 @@ function bindForms() {
       if (!support.goalId && goalRaw) {
         support = parseGoalStepValue(goalRaw);
       }
+      const durationHours   = parseInt(form.get("durationHours") || "0", 10) || 0;
+      const durationMins    = parseInt(form.get("durationMins") || "0", 10) || 0;
+      const totalDurationMin = durationHours * 60 + durationMins;
+      const timeOfDay       = String(form.get("timeOfDay") || "").trim();
       state.habits.push(makeHabit(
         form.get("name"),
         form.get("category"),
         selectedScheduleDays(habitForm),
         support.goalId,
-        support.stepId
+        support.stepId,
+        totalDurationMin,
+        timeOfDay
       ));
       habitForm.reset();
       habitForm._scheduleDays = [...ALL_WEEKDAYS];

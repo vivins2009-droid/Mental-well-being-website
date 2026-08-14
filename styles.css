@@ -8590,3 +8590,170 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
   outline: 2px solid rgba(0,255,208,0.5);
   outline-offset: 2px;
 }
+
+/* ─── Habit session fields (duration + time of day) ─── */
+.habit-session-field {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid rgba(0, 246, 255, 0.18);
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(167, 139, 250, 0.05), transparent 60%),
+    rgba(0, 246, 255, 0.025);
+  box-shadow: 0 2px 16px rgba(0, 246, 255, 0.04), inset 0 0 0 1px rgba(0, 246, 255, 0.05);
+}
+
+.habit-session-field-head {
+  display: grid;
+  gap: 3px;
+}
+
+.habit-session-field-head strong {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.habit-session-field-head small {
+  color: rgba(188, 236, 242, 0.52);
+  font-size: 0.70rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.habit-session-field input[type="text"],
+.habit-session-field input[type="number"] {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(0, 246, 255, 0.04);
+  border: 1px solid rgba(0, 246, 255, 0.2);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  box-sizing: border-box;
+}
+
+.habit-session-field input[type="text"]:focus,
+.habit-session-field input[type="number"]:focus {
+  outline: none;
+  border-color: rgba(0, 246, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(0, 246, 255, 0.10);
+}
+
+/* Duration row: [hours] : [minutes dropdown] */
+.habit-duration-inputs {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.duration-part {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+}
+
+.duration-part span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(188, 236, 242, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.duration-part input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 246, 255, 0.04);
+  border: 1px solid rgba(0, 246, 255, 0.2);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.duration-part input[type="number"]:focus {
+  outline: none;
+  border-color: rgba(0, 246, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(0, 246, 255, 0.10);
+}
+
+.duration-part select {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 246, 255, 0.04);
+  border: 1px solid rgba(0, 246, 255, 0.2);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.18s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300f6ff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.duration-part select:focus {
+  outline: none;
+  border-color: rgba(0, 246, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(0, 246, 255, 0.10);
+}
+
+.duration-sep {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: rgba(0, 246, 255, 0.4);
+  padding-bottom: 10px;
+  line-height: 1;
+  user-select: none;
+}
+
+/* ─── Habit chip pills shown in checklist rows ─── */
+.habit-session-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.habit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.habit-chip--duration {
+  background: rgba(0, 246, 255, 0.08);
+  border: 1px solid rgba(0, 246, 255, 0.28);
+  color: #a8e6ef;
+}
+
+.habit-chip--time {
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  color: #c4b5fd;
+}
+
+.chip-icon {
+  font-size: 0.82rem;
+  line-height: 1;
+}
