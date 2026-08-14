@@ -8725,15 +8725,17 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 .habit-time-inputs {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   gap: 12px;
+  width: 100%;
 }
 
 .time-part {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
-  gap: 5px;
-  flex: 0 0 auto;
+  gap: 6px;
+  flex: 1;
+  min-width: 130px;
 }
 
 .time-part > span {
@@ -8744,82 +8746,6 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
   letter-spacing: 0.04em;
 }
 
-/* Group container holding [Hour] : [Min] [AM/PM] */
-.custom-time-picker {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.time-select {
-  height: 38px;
-  padding: 0 6px;
-  background: rgba(0, 246, 255, 0.04);
-  border: 1px solid rgba(0, 246, 255, 0.22);
-  border-radius: 10px;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
-  box-sizing: border-box;
-  text-align: center;
-  text-align-last: center;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2300f6ff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 6px center;
-  padding-right: 18px;
-}
-
-.time-select:focus {
-  border-color: rgba(0, 246, 255, 0.6);
-  box-shadow: 0 0 0 3px rgba(0, 246, 255, 0.12);
-}
-
-.time-select option {
-  background: #0c1921;
-  color: #e2f8ff;
-}
-
-/* Explicit widths for Hour, Minute, and AM/PM */
-.time-select[name$="Hour"] {
-  width: 54px;
-  flex: 0 0 54px;
-}
-
-.time-select[name$="Min"] {
-  width: 58px;
-  flex: 0 0 58px;
-}
-
-/* AM/PM select */
-.time-select--ampm,
-.time-select[name$="Ampm"] {
-  width: 62px;
-  flex: 0 0 62px;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: #00ffd0;
-  background-color: rgba(0, 246, 255, 0.08);
-  border-color: rgba(0, 246, 255, 0.3);
-}
-
-/* Colon divider */
-.time-colon {
-  font-size: 1.1rem;
-  font-weight: 900;
-  color: rgba(0, 246, 255, 0.5);
-  padding: 0 1px;
-  user-select: none;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
 /* Range separator "to" */
 .time-range-sep {
   font-size: 0.78rem;
@@ -8827,6 +8753,9 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
   color: rgba(0, 246, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  align-self: flex-end;
+  padding-bottom: 12px;
+  white-space: nowrap;
   user-select: none;
 }
 

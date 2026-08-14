@@ -2316,15 +2316,15 @@ function habitEditMarkup(habit) {
           <small>Optional. Pick the window when you plan to do this habit.</small>
         </div>
         <div class="habit-time-inputs">
-          <div class="time-part">
+          <label class="time-part">
             <span>Start</span>
-            <div class="custom-time-picker">${timeSelectMarkup("timeStart", parseTimeLabel(habit._timeStart || ""))}</div>
-          </div>
+            <select name="timeStart">${generateTimeOptionsMarkup(habit._timeStart || (habit.timeOfDay ? habit.timeOfDay.split("\u2013")[0]?.trim() : ""))}</select>
+          </label>
           <span class="time-range-sep">to</span>
-          <div class="time-part">
+          <label class="time-part">
             <span>End</span>
-            <div class="custom-time-picker">${timeSelectMarkup("timeEnd", parseTimeLabel(habit._timeEnd || ""))}</div>
-          </div>
+            <select name="timeEnd">${generateTimeOptionsMarkup(habit._timeEnd || (habit.timeOfDay ? habit.timeOfDay.split("\u2013")[1]?.trim() : ""))}</select>
+          </label>
         </div>
       </div>
     </form>
@@ -2360,8 +2360,8 @@ function bindHabitEditControls(row, habit) {
     const editHours = parseInt(data.get("durationHours") || "0", 10) || 0;
     const editMins  = parseInt(data.get("durationMins") || "0", 10) || 0;
     habit.durationMinutes = editHours * 60 + editMins;
-    const editStart = readTimeFromParts(data, "timeStart");
-    const editEnd   = readTimeFromParts(data, "timeEnd");
+    const editStart = String(data.get("timeStart") || "").trim();
+    const editEnd   = String(data.get("timeEnd") || "").trim();
     habit._timeStart = editStart;
     habit._timeEnd   = editEnd;
     habit.timeOfDay  = buildTimeOfDay(editStart, editEnd);
@@ -3304,39 +3304,19 @@ function formatTime24to12(time24) {
   return `${h12}:${m} ${suffix}`;
 }
 
-function parseTimeLabel(label) {
-  // Parse "5:30 PM" back to {h, m, ampm} for pre-populating the edit form
-  if (!label) return { h: "", m: "00", ampm: "PM" };
-  const match = label.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return { h: "", m: "00", ampm: "PM" };
-  return { h: String(parseInt(match[1], 10)), m: match[2], ampm: match[3].toUpperCase() };
-}
-
-function timeSelectMarkup(prefix, parsed) {
-  const hours = [1,2,3,4,5,6,7,8,9,10,11,12];
-  const mins  = ["00","05","10","15","20","25","30","35","40","45","50","55"];
-  return `
-    <select name="${prefix}Hour" class="time-select" aria-label="Hour">
-      <option value="">--</option>
-      ${hours.map(h => `<option value="${h}" ${String(parsed.h) === String(h) ? "selected" : ""}>${h}</option>`).join("")}
-    </select>
-    <span class="time-colon" aria-hidden="true">:</span>
-    <select name="${prefix}Min" class="time-select" aria-label="Minute">
-      ${mins.map(m => `<option value="${m}" ${parsed.m === m ? "selected" : ""}>${m}</option>`).join("")}
-    </select>
-    <select name="${prefix}Ampm" class="time-select time-select--ampm" aria-label="AM or PM">
-      <option value="AM" ${parsed.ampm === "AM" ? "selected" : ""}>AM</option>
-      <option value="PM" ${parsed.ampm === "PM" ? "selected" : ""}>PM</option>
-    </select>
-  `;
-}
-
-function readTimeFromParts(formData, prefix) {
-  const h    = String(formData.get(`${prefix}Hour`) || "").trim();
-  const m    = String(formData.get(`${prefix}Min`)  || "00").trim();
-  const ampm = String(formData.get(`${prefix}Ampm`) || "AM").trim();
-  if (!h) return "";
-  return `${h}:${m} ${ampm}`;
+function generateTimeOptionsMarkup(selected = "") {
+  const options = ['<option value="">None</option>'];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      const mStr = m < 10 ? `0${m}` : `${m}`;
+      const val = `${h12}:${mStr} ${ampm}`;
+      const isSel = String(selected).trim() === val ? "selected" : "";
+      options.push(`<option value="${escapeHtml(val)}" ${isSel}>${escapeHtml(val)}</option>`);
+    }
+  }
+  return options.join("\n");
 }
 
 function buildTimeOfDay(timeStart, timeEnd) {
@@ -3457,8 +3437,8 @@ function bindForms() {
       const durationHours   = parseInt(form.get("durationHours") || "0", 10) || 0;
       const durationMins    = parseInt(form.get("durationMins") || "0", 10) || 0;
       const totalDurationMin = durationHours * 60 + durationMins;
-      const timeStart = readTimeFromParts(form, "timeStart");
-      const timeEnd   = readTimeFromParts(form, "timeEnd");
+      const timeStart = String(form.get("timeStart") || "").trim();
+      const timeEnd   = String(form.get("timeEnd") || "").trim();
       const timeOfDay = buildTimeOfDay(timeStart, timeEnd);
       const newHabit = makeHabit(
         form.get("name"),
