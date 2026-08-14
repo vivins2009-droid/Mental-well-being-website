@@ -8745,13 +8745,12 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 /* Wrapper that groups the three selects into one visual block */
 .custom-time-picker {
   display: flex;
-  align-items: center;
-  gap: 0;
+  align-items: stretch;
   background: rgba(0, 246, 255, 0.04);
   border: 1px solid rgba(0, 246, 255, 0.22);
   border-radius: 10px;
-  overflow: hidden;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  width: 100%;
 }
 
 .custom-time-picker:focus-within {
@@ -8760,9 +8759,10 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
 }
 
 .time-select {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 6px;
+  flex: 1 1 auto;
+  width: 0;            /* let flex distribute space */
+  min-width: 38px;
+  padding: 10px 4px;
   background: transparent;
   border: none;
   border-right: 1px solid rgba(0, 246, 255, 0.12);
@@ -8774,34 +8774,45 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
   -webkit-appearance: none;
   appearance: none;
   text-align: center;
+  text-align-last: center;
   outline: none;
+}
+
+/* First select gets left-rounded corners */
+.custom-time-picker .time-select:first-of-type {
+  border-radius: 9px 0 0 9px;
 }
 
 .time-select:last-child {
   border-right: none;
+  border-radius: 0 9px 9px 0;
 }
 
-/* AM/PM selector — narrower and slightly tinted */
+/* AM/PM selector — fixed narrow width, cyan-tinted */
 .time-select--ampm {
-  flex: 0 0 auto;
-  width: 58px;
+  flex: 0 0 58px;
+  min-width: 58px;
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: rgba(0, 246, 255, 0.85);
-  background: rgba(0, 246, 255, 0.05);
-  border-left: 1px solid rgba(0, 246, 255, 0.16);
+  color: rgba(0, 246, 255, 0.9);
+  background: rgba(0, 246, 255, 0.07);
+  border-left: 1px solid rgba(0, 246, 255, 0.18);
   border-right: none;
+  border-radius: 0 9px 9px 0;
 }
 
 /* Colon divider inside the picker */
 .time-colon {
   font-size: 1rem;
   font-weight: 900;
-  color: rgba(0, 246, 255, 0.4);
-  padding: 0 2px;
+  color: rgba(0, 246, 255, 0.45);
+  padding: 0 3px;
   user-select: none;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: transparent;
 }
 
 .time-range-sep {
@@ -8814,6 +8825,7 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
   white-space: nowrap;
   user-select: none;
 }
+
 
 /* ─── Habit chip pills shown in checklist rows ─── */
 .habit-session-chips {
