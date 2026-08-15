@@ -8,6 +8,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <script>
+    (function() {
+      var t = localStorage.getItem('planwell_theme') || 'cyber-blue';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="landing-styles.css">
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

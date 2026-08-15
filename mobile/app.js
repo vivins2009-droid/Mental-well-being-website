@@ -9,6 +9,18 @@ const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "Ju
 const CALENDAR_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const MS_PER_DAY = 86400000;
+const SAVED_THEME_KEY = "planwell_theme";
+
+function getActiveTheme() {
+  return localStorage.getItem(SAVED_THEME_KEY) || "cyber-blue";
+}
+function applyTheme(themeName) {
+  const theme = themeName || getActiveTheme();
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(SAVED_THEME_KEY, theme);
+  if (typeof state === "object" && state) state.theme = theme;
+}
+applyTheme(getActiveTheme());
 
 let selectedHabitDateKey = dateKey();
 let editingCategoryName = "";
@@ -2364,7 +2376,8 @@ function setAuthStatus(message) {
   });
 }
 
-function renderAccountControls() {
+function renderAccountChip() {
+  const syncStatus = getSyncStatusText();
   let chip = document.querySelector("[data-account-chip]");
   if (!currentUser) {
     chip?.remove();
@@ -2378,6 +2391,8 @@ function renderAccountControls() {
     document.body.append(chip);
   }
 
+  const currentTheme = getActiveTheme();
+
   chip.innerHTML = `
     <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
       <span class="profile-head" aria-hidden="true"></span>
@@ -2389,7 +2404,38 @@ function renderAccountControls() {
         <span>${escapeHtml(userEmail() || "Signed in")}</span>
         <em data-sync-status>${escapeHtml(syncStatus)}</em>
       </div>
-      <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
+
+      <div class="theme-selector-section" style="margin: 10px 0; padding-top: 10px; border-top: 1px solid var(--line);">
+        <span style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase; color: var(--mint); letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Accent &amp; Color Theme</span>
+        <div class="theme-options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button class="theme-swatch-btn ${currentTheme === "cyber-blue" ? "is-active" : ""}" type="button" data-set-theme="cyber-blue">
+            <span class="swatch-color" style="background: linear-gradient(135deg, #00f6ff, #00ffd0);"></span>
+            <span>Cyber Blue</span>
+          </button>
+          <button class="theme-swatch-btn ${currentTheme === "onyx-dark" ? "is-active" : ""}" type="button" data-set-theme="onyx-dark">
+            <span class="swatch-color" style="background: linear-gradient(135deg, #ffffff, #94a3b8);"></span>
+            <span>Onyx Dark</span>
+          </button>
+          <button class="theme-swatch-btn ${currentTheme === "emerald-focus" ? "is-active" : ""}" type="button" data-set-theme="emerald-focus">
+            <span class="swatch-color" style="background: linear-gradient(135deg, #00ff88, #00e676);"></span>
+            <span>Emerald</span>
+          </button>
+          <button class="theme-swatch-btn ${currentTheme === "solar-gold" ? "is-active" : ""}" type="button" data-set-theme="solar-gold">
+            <span class="swatch-color" style="background: linear-gradient(135deg, #ffb700, #ffd700);"></span>
+            <span>Solar Gold</span>
+          </button>
+          <button class="theme-swatch-btn ${currentTheme === "hyper-violet" ? "is-active" : ""}" type="button" data-set-theme="hyper-violet">
+            <span class="swatch-color" style="background: linear-gradient(135deg, #a78bfa, #c084fc);"></span>
+            <span>Hyper Violet</span>
+          </button>
+          <button class="theme-swatch-btn ${currentTheme === "crimson-drive" ? "is-active" : ""}" type="button" data-set-theme="crimson-drive">
+            <span class="swatch-color" style="background: linear-gradient(135deg, #ff4757, #ff6b81);"></span>
+            <span>Crimson</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="delete-button profile-signout-button" type="button" data-sign-out style="margin-top: 6px;">Log out</button>
     </div>
   `;
 
@@ -2401,6 +2447,20 @@ function renderAccountControls() {
     menu.hidden = isOpen;
     menuButton.setAttribute("aria-expanded", String(!isOpen));
   });
+
+  chip.querySelectorAll("[data-set-theme]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const selectedTheme = btn.dataset.setTheme;
+      applyTheme(selectedTheme);
+      renderAccountChip();
+      const newMenu = chip.querySelector("[data-profile-menu]");
+      const newMenuBtn = chip.querySelector("[data-profile-menu-toggle]");
+      if (newMenu) newMenu.hidden = false;
+      if (newMenuBtn) newMenuBtn.setAttribute("aria-expanded", "true");
+    });
+  });
+
   chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
     menu.hidden = true;
     menuButton?.setAttribute("aria-expanded", "false");
