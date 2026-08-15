@@ -631,13 +631,28 @@ function setHabitReflection(habit, key, reflection) {
 }
 
 function habitStreak(habit, fromKey = todayKey()) {
-  let streak = 0;
   let cursor = dateForKey(fromKey);
   let guard = 0;
-  while (!isHabitScheduledOn(habit, dateKey(cursor)) && guard < 370) {
-    cursor = addDays(cursor, -1);
-    guard += 1;
+
+  // If scheduled on fromKey and NOT done today, check if yesterday was done (habit in-progress today)
+  if (isHabitScheduledOn(habit, dateKey(cursor)) && !habitDoneOn(habit, dateKey(cursor))) {
+    let prevCursor = addDays(cursor, -1);
+    while (!isHabitScheduledOn(habit, dateKey(prevCursor)) && guard < 370) {
+      prevCursor = addDays(prevCursor, -1);
+      guard += 1;
+    }
+    if (isHabitScheduledOn(habit, dateKey(prevCursor)) && habitDoneOn(habit, dateKey(prevCursor))) {
+      cursor = prevCursor;
+    }
+  } else {
+    while (!isHabitScheduledOn(habit, dateKey(cursor)) && guard < 370) {
+      cursor = addDays(cursor, -1);
+      guard += 1;
+    }
   }
+
+  let streak = 0;
+  guard = 0;
   while (isHabitScheduledOn(habit, dateKey(cursor)) && habitDoneOn(habit, dateKey(cursor)) && guard < 740) {
     streak += 1;
     do {
@@ -3736,8 +3751,8 @@ function render21DayHabitsSection() {
             <strong style="color: #fff; font-size: 0.95rem;">${escapeHtml(habit.name)} ${isCompleted21 ? "21-Day Master" : ""}</strong>
             <span style="display: block; font-size: 0.75rem; color: #94a3b8;">${escapeHtml(habit.category)} | ${streak} day streak</span>
           </div>
-          <button class="ghost-button compact-button" type="button" data-check-21day="${habit.id}" ${doneToday ? "disabled" : ""} style="font-size: 0.75rem; padding: 4px 10px;">
-            ${doneToday ? "✓ Checked Today" : "Check In"}
+          <button class="ghost-button compact-button" type="button" data-check-21day="${habit.id}" style="font-size: 0.75rem; padding: 4px 10px; ${doneToday ? 'background: rgba(0,255,208,0.15); border-color: #00ffd0; color: #00ffd0;' : ''}">
+            ${doneToday ? "✓ Checked (Undo)" : "Check In"}
           </button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -3750,21 +3765,29 @@ function render21DayHabitsSection() {
         </div>
       `;
 
-      card.querySelector("[data-check-21day]")?.addEventListener("click", () => {
-        setHabitDone(habit, today, true);
-        const newStreak = habitStreak(habit);
-        if (newStreak === 21) {
-          addNotification({
-            title: `21-Day Habit Master Unlocked!`,
-            body: `Incredible! You completed 21 consecutive days of "${habit.name}"! +500 XP Boost awarded!`,
-            type: "reward"
-          });
-        } else {
-          addNotification({
-            title: `Habit Checked: ${habit.name}`,
-            body: `Streak is now ${newStreak} days! Keep it up for your 21-Day Master Badge!`,
-            type: "habit"
-          });
+      card.querySelector("[data-check-21day]")?.addEventListener("click", (e) => {
+        const currentlyDone = habitDoneOn(habit, today);
+        const nextState = !currentlyDone;
+        setHabitDone(habit, today, nextState);
+        if (nextState) {
+          const rect = e.currentTarget.getBoundingClientRect();
+          if (typeof launchConfetti === "function") {
+            launchConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          }
+          const newStreak = habitStreak(habit);
+          if (newStreak === 21) {
+            addNotification({
+              title: `21-Day Habit Master Unlocked!`,
+              body: `Incredible! You completed 21 consecutive days of "${habit.name}"! +500 XP Boost awarded!`,
+              type: "reward"
+            });
+          } else {
+            addNotification({
+              title: `Habit Checked: ${habit.name}`,
+              body: `Streak is now ${newStreak} days! Keep it up for your 21-Day Master Badge!`,
+              type: "habit"
+            });
+          }
         }
         saveAndRender();
       });
