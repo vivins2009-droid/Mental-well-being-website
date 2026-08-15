@@ -4836,6 +4836,10 @@ select option:hover,
 .command-card .metric-copy > span,
 .command-card .metric-copy p {
   text-align: inherit;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .command-card .metric-copy strong {

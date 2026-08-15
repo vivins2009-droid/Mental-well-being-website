@@ -519,6 +519,12 @@ function setHabitReflection(habit, key, reflection) {
   record.updatedAt = new Date().toISOString();
 }
 
+function getHabitNumber(habit) {
+  if (!habit || !state.habits) return 1;
+  const index = state.habits.findIndex((h) => h.id === habit.id);
+  return index >= 0 ? index + 1 : 1;
+}
+
 function habitStreak(habit, fromKey = todayKey()) {
   let cursor = dateForKey(fromKey);
   let guard = 0;
@@ -693,10 +699,17 @@ function totals() {
     const left = daysLeft(goal.deadline);
     return left !== null && left >= 0 && left <= 7 && goalProgress(goal) < 100;
   }).length;
-  const bestHabit = state.habits
-    .map((habit) => ({ name: habit.name, streak: habitStreak(habit) }))
-    .sort((a, b) => b.streak - a.streak)[0] || { name: "No habits yet", streak: 0 };
-  const strongestHabit = bestHabit.streak > 0 ? bestHabit.name : "None";
+  const bestHabitObj = state.habits
+    .map((habit) => ({
+      habit,
+      number: getHabitNumber(habit),
+      name: habit.name,
+      streak: habitStreak(habit)
+    }))
+    .sort((a, b) => b.streak - a.streak)[0];
+
+  const bestHabit = bestHabitObj || { habit: null, number: 0, name: "No habits yet", streak: 0 };
+  const strongestHabit = bestHabit.streak > 0 ? `Habit ${bestHabit.number}` : "None";
   const completed21DayHabits = state.habits.filter((h) => habitStreak(h) >= 21).length;
   const xp = totalHabitCompletions * 10 + stepsDone * 40 + achievedGoals * 300 + tasksDone * 15 + completed21DayHabits * 500;
 
@@ -747,8 +760,8 @@ function syncMetrics() {
   setText('[data-metric="openTasks"]', data.openTasks);
   setText('[data-metric="bestStreak"]', `${data.bestHabit.streak} days`);
   setText('[data-metric="strongestHabit"]', data.strongestHabit);
-  setText('[data-metric="strongestStreak"]', `${data.bestHabit.streak} day streak`);
-  setText('[data-copy="strongestStreak"]', `${data.bestHabit.streak} day streak`);
+  setText('[data-metric="strongestStreak"]', data.bestHabit.streak > 0 ? `${data.bestHabit.name} • ${data.bestHabit.streak} day streak` : "0 day streak");
+  setText('[data-copy="strongestStreak"]', data.bestHabit.streak > 0 ? `${data.bestHabit.name} • ${data.bestHabit.streak} day streak` : "0 day streak");
   setText('[data-metric="recoveryHabit"]', data.habitCount ? findRecoveryHabit() : "None");
   setText('[data-metric="weeklyChecks"]', `${data.checksDone} / ${data.plannedChecks} scheduled habits done today`);
   setText('[data-metric="rewardProgress"]', `${data.xp} XP earned`);
@@ -760,7 +773,7 @@ function syncMetrics() {
   setText('[data-copy="habitChecks"]', `${data.checksDone} done today`);
   setText('[data-copy="goalAreas"]', `Across ${new Set(state.goals.map((goal) => goal.category)).size} life areas`);
   setText('[data-copy="habitPlanned"]', `Out of ${data.plannedChecks} scheduled today`);
-  setText('[data-copy="bestHabit"]', data.bestHabit.streak > 0 ? data.bestHabit.name : "No habits yet");
+  setText('[data-copy="bestHabit"]', data.bestHabit.streak > 0 ? `Habit ${data.bestHabit.number}: ${data.bestHabit.name}` : "No habits yet");
 
   setBar("overallProgress", data.overallProgress);
   setBar("goalCompletion", data.averageGoalProgress);
@@ -2013,7 +2026,7 @@ function dailyHabitRow(habit, key) {
   }
   row.innerHTML = `
     <div class="daily-habit-main">
-      <strong>${escapeHtml(habit.name)}</strong>
+      <strong>${getHabitNumber(habit)}. ${escapeHtml(habit.name)}</strong>
       <span>${escapeHtml(habit.category || fallbackCategory())} | ${formatHabitDay(key)} | ${escapeHtml(scheduleLabel(habit))}</span>
       ${habitSupportMarkup(habit)}
       ${linkedTaskMarkup(habit, key)}
@@ -2194,7 +2207,7 @@ function renderStreaks() {
       const row = document.createElement("div");
       row.className = "streak-row";
       row.innerHTML = `
-        <strong>${escapeHtml(habit.name)}</strong>
+        <strong>${getHabitNumber(habit)}. ${escapeHtml(habit.name)}</strong>
         <span>${habitStreak(habit)} scheduled checks | ${escapeHtml(scheduleLabel(habit))}</span>
       `;
       list.append(row);
@@ -3438,7 +3451,7 @@ function render21DayHabitsSection() {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <div>
             <strong style="color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
-              ${escapeHtml(habit.name)} ${isCompleted21 ? '<span style="background:rgba(0,255,208,0.2);color:#00ffd0;font-size:0.7rem;padding:2px 8px;border-radius:12px;border:1px solid rgba(0,255,208,0.4);">21-Day Master</span>' : ''}
+              ${getHabitNumber(habit)}. ${escapeHtml(habit.name)} ${isCompleted21 ? '<span style="background:rgba(0,255,208,0.2);color:#00ffd0;font-size:0.7rem;padding:2px 8px;border-radius:12px;border:1px solid rgba(0,255,208,0.4);">21-Day Master</span>' : ''}
             </strong>
             <span style="display: block; font-size: 0.76rem; color: #7caab4; margin-top: 2px;">
               ${escapeHtml(habit.category)} &bull; <span style="color:#00ffd0;font-weight:700;">${streak} day streak</span>
