@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="pwBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#061826" />
+      <stop offset="100%" stop-color="#02070d" />
+    </linearGradient>
+    <linearGradient id="pwBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f6ff" />
+      <stop offset="100%" stop-color="#00ffd0" />
+    </linearGradient>
+    <linearGradient id="pwText" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#00ffd0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Ring Accent -->
+  <circle cx="32" cy="32" r="29" fill="none" stroke="url(#pwBorder)" stroke-width="1.5" stroke-dasharray="10 4" opacity="0.75" />
+
+  <!-- Base Card -->
+  <rect x="4" y="4" width="56" height="56" rx="15" fill="url(#pwBg)" stroke="url(#pwBorder)" stroke-width="2.5" />
+
+  <!-- PW Text -->
+  <text x="32" y="41" font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="25" text-anchor="middle" fill="url(#pwText)" letter-spacing="-1">PW</text>
+</svg>
