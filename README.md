@@ -1,6 +1,6 @@
 # Plan Well - Mindful Goal Builder & Habit Tracker
 
-Plan Well is a personal goal builder and habit tracker engineered to eliminate overwhelm, connect daily routines to long-term progress, and grow together with friends and family in a responsive 3D interface.
+Plan Well is a personal goal builder and habit tracker engineered to eliminate overwhelm, connect daily routines to long-term progress, and reward daily consistency in a responsive 3D interface.
 
 The application starts clean with zero pre-loaded bloat. Everything shown in the dashboard centers around the goals, habits, and tasks added by the user.
 
@@ -10,7 +10,7 @@ The application starts clean with zero pre-loaded bloat. Everything shown in the
 
 Access the live application here:
 
-[Plan Well Live Application](https://stayfocusedplanwell.netlify.app/)
+[Plan Well Live Application](https://mental-well-being-website.vercel.app/)
 
 ---
 
@@ -30,8 +30,8 @@ Access the live application here:
 - Connect daily habits directly to specific goal milestones so everyday actions compound into long-term achievement.
 - Connect one-off tasks to habits or goals.
 
-### Friends & Family Growth & Consistency
-- Share habit streaks and compare consistency leaderboards with friends and family members to stay accountable together.
+### Gamified Rewards & XP Progression
+- Earn XP as you complete habits and micro-steps, maintain daily streaks, unlock level badges, and reward yourself.
 
 ---
 
