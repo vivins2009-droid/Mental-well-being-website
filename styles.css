@@ -8804,3 +8804,195 @@ input[type="checkbox"][data-habit-done-checkbox]:checked {
   color: #c4b5fd;
 }
 
+/* ==========================================
+   COLOR THEMES SYSTEM & SWITCHER
+   ========================================== */
+
+/* Profile Menu Theme Selector Styling */
+.profile-theme-section {
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 10px 0;
+}
+.theme-section-title {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.theme-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.theme-opt-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.theme-opt-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.theme-opt-btn.active-theme {
+  border-color: var(--mint);
+  background: rgba(0, 255, 208, 0.12);
+  color: #ffffff;
+}
+.theme-preview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 1. OBSIDIAN BLACK THEME (Ento Studios Inspired - Pure Pitch Black & Crisp White) */
+body[data-theme="black"], html[data-theme="black"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --panel: rgba(14, 14, 16, 0.94);
+  --panel-2: rgba(20, 20, 24, 0.96);
+  --panel-3: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.16);
+  --text: #ffffff;
+  --muted: #a1a1aa;
+  --pink: #ffffff;
+  --violet: #e4e4e7;
+  --mint: #ffffff;
+  --yellow: #f4f4f5;
+  --blue: #ffffff;
+  --danger: #ef4444;
+  --glow: rgba(255, 255, 255, 0.2);
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="black"] .app-shell,
+body[data-theme="black"] .main-panel,
+body[data-theme="black"] .sidebar,
+body[data-theme="black"] .topbar {
+  background-color: #000000 !important;
+}
+
+body[data-theme="black"] .panel,
+body[data-theme="black"] .card,
+body[data-theme="black"] .metric-card,
+body[data-theme="black"] .command-card,
+body[data-theme="black"] .auth-card {
+  background: rgba(14, 14, 16, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85) !important;
+}
+
+body[data-theme="black"] .nav-item {
+  color: #a1a1aa;
+}
+body[data-theme="black"] .nav-item.active,
+body[data-theme="black"] .nav-item:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #ffffff !important;
+}
+
+body[data-theme="black"] input,
+body[data-theme="black"] select,
+body[data-theme="black"] textarea,
+body[data-theme="black"] .cyber-select-button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="black"] .text-button,
+body[data-theme="black"] button.text-button {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+  font-weight: 700 !important;
+}
+body[data-theme="black"] .text-button:hover {
+  background: #e4e4e7 !important;
+}
+
+body[data-theme="black"] .ghost-button {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+body[data-theme="black"] .ghost-button:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 2. MIDNIGHT SAPPHIRE THEME (Royal Blue & Cyan) */
+body[data-theme="sapphire"], html[data-theme="sapphire"] {
+  color-scheme: dark;
+  --bg: #030712;
+  --panel: rgba(15, 23, 42, 0.88);
+  --panel-2: rgba(30, 41, 59, 0.92);
+  --panel-3: rgba(59, 130, 246, 0.15);
+  --line: rgba(59, 130, 246, 0.35);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --pink: #3b82f6;
+  --violet: #60a5fa;
+  --mint: #38bdf8;
+  --yellow: #facc15;
+  --blue: #2563eb;
+  --danger: #f43f5e;
+  --glow: rgba(59, 130, 246, 0.45);
+  background-color: #030712 !important;
+}
+
+/* 3. SUNSET AMBER THEME (Dark Charcoal & Amber Gold) */
+body[data-theme="amber"], html[data-theme="amber"] {
+  color-scheme: dark;
+  --bg: #0c0a09;
+  --panel: rgba(28, 25, 23, 0.88);
+  --panel-2: rgba(44, 40, 37, 0.92);
+  --panel-3: rgba(245, 158, 11, 0.15);
+  --line: rgba(245, 158, 11, 0.35);
+  --text: #fafaf9;
+  --muted: #a8a29e;
+  --pink: #f59e0b;
+  --violet: #fbbf24;
+  --mint: #fef08a;
+  --yellow: #fde047;
+  --blue: #d97706;
+  --danger: #ef4444;
+  --glow: rgba(245, 158, 11, 0.45);
+  background-color: #0c0a09 !important;
+}
+
+/* 4. NEON VIOLET THEME (Midnight Purple & Magenta) */
+body[data-theme="violet"], html[data-theme="violet"] {
+  color-scheme: dark;
+  --bg: #0b0514;
+  --panel: rgba(24, 12, 38, 0.88);
+  --panel-2: rgba(42, 20, 66, 0.92);
+  --panel-3: rgba(139, 92, 246, 0.15);
+  --line: rgba(139, 92, 246, 0.35);
+  --text: #faf5ff;
+  --muted: #c084fc;
+  --pink: #ec4899;
+  --violet: #a855f7;
+  --mint: #8b5cf6;
+  --yellow: #e879f9;
+  --blue: #6366f1;
+  --danger: #f43f5e;
+  --glow: rgba(139, 92, 246, 0.45);
+  background-color: #0b0514 !important;
+}
+
