@@ -9,18 +9,6 @@ const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "Ju
 const CALENDAR_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const MS_PER_DAY = 86400000;
-const SAVED_THEME_KEY = "planwell_theme";
-
-function getActiveTheme() {
-  return localStorage.getItem(SAVED_THEME_KEY) || "cyber-blue";
-}
-function applyTheme(themeName) {
-  const theme = themeName || getActiveTheme();
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(SAVED_THEME_KEY, theme);
-  if (typeof state === "object" && state) state.theme = theme;
-}
-applyTheme(getActiveTheme());
 
 let selectedHabitDateKey = dateKey();
 let editingCategoryName = "";
@@ -305,9 +293,11 @@ function setAuthVisibility() {
   const authScreen = document.querySelector("[data-auth-screen]");
   if (authScreen) {
     if (isLocalPreview() || isAuth) {
+      authScreen.hidden = true;
       authScreen.style.setProperty("display", "none", "important");
       authScreen.remove();
     } else {
+      authScreen.style.removeProperty("display");
       authScreen.hidden = false;
     }
     if (authScreen.querySelector("[data-auth-setup]")) {
@@ -2238,11 +2228,55 @@ function formatCurrentTimeReadout() {
   return new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
+/* ==========================================================================
+   AUTH BOOTSTRAP LOADER / SESSION INITIALIZATION SCREEN
+   ========================================================================== */
+
+function ensureAuthBootstrapLoader() {
+  if (document.getElementById("authBootstrapLoader")) return;
+  const loader = document.createElement("div");
+  loader.id = "authBootstrapLoader";
+  loader.className = "auth-bootstrap-loader";
+  loader.setAttribute("aria-label", "Initializing Plan Well");
+  loader.innerHTML = `
+    <div class="bootstrap-content">
+      <div class="bootstrap-brand-logo">
+        <div class="bootstrap-logo-ring"></div>
+        <span class="bootstrap-logo-text">PW</span>
+      </div>
+      <div class="bootstrap-text-group">
+        <span class="bootstrap-app-title">Plan Well</span>
+        <span class="bootstrap-status-msg" data-bootstrap-status>Initializing session...</span>
+      </div>
+      <div class="bootstrap-progress-bar">
+        <div class="bootstrap-progress-fill"></div>
+      </div>
+    </div>
+  `;
+  document.body.prepend(loader);
+}
+
+function updateBootstrapStatus(message) {
+  const el = document.querySelector("[data-bootstrap-status]");
+  if (el) el.textContent = message;
+}
+
+function dismissAuthBootstrapLoader() {
+  const loader = document.getElementById("authBootstrapLoader");
+  if (!loader) return;
+  loader.classList.add("is-hiding");
+  setTimeout(() => {
+    if (loader.parentNode) loader.parentNode.removeChild(loader);
+  }, 380);
+}
+
 function ensureAuthScreen() {
   if (document.querySelector("[data-auth-screen]")) return;
   const screen = document.createElement("section");
   screen.className = "auth-screen";
   screen.dataset.authScreen = "";
+  screen.hidden = true;
+  screen.style.setProperty("display", "none", "important");
   screen.innerHTML = `
     <div class="auth-hud" aria-hidden="true">
       <span></span>
@@ -2377,8 +2411,11 @@ function setAuthStatus(message) {
 }
 
 function renderAccountControls() {
-  const syncStatus = getSyncStatusText();
   let chip = document.querySelector("[data-account-chip]");
+  if (!currentUser) {
+    chip?.remove();
+    return;
+  }
 
   if (!chip) {
     chip = document.createElement("div");
@@ -2387,10 +2424,6 @@ function renderAccountControls() {
     document.body.append(chip);
   }
 
-  const currentTheme = getActiveTheme();
-  const displayName = currentUser ? authDisplayName() : "Planwell User";
-  const displayEmail = currentUser ? (userEmail() || "Signed in") : "Free Account";
-
   chip.innerHTML = `
     <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
       <span class="profile-head" aria-hidden="true"></span>
@@ -2398,42 +2431,11 @@ function renderAccountControls() {
     </button>
     <div class="profile-menu" data-profile-menu hidden>
       <div class="profile-menu-copy">
-        <strong>${escapeHtml(displayName)}</strong>
-        <span>${escapeHtml(displayEmail)}</span>
+        <strong>${escapeHtml(authDisplayName())}</strong>
+        <span>${escapeHtml(userEmail() || "Signed in")}</span>
         <em data-sync-status>${escapeHtml(syncStatus)}</em>
       </div>
-
-      <div class="theme-selector-section" style="margin: 10px 0; padding-top: 10px; border-top: 1px solid var(--line);">
-        <span style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase; color: var(--mint); letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Accent &amp; Color Theme</span>
-        <div class="theme-options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          <button class="theme-swatch-btn ${currentTheme === "cyber-blue" ? "is-active" : ""}" type="button" data-set-theme="cyber-blue">
-            <span class="swatch-color" style="background: linear-gradient(135deg, #00f6ff, #00ffd0);"></span>
-            <span>Cyber Blue</span>
-          </button>
-          <button class="theme-swatch-btn ${currentTheme === "onyx-dark" ? "is-active" : ""}" type="button" data-set-theme="onyx-dark">
-            <span class="swatch-color" style="background: linear-gradient(135deg, #ffffff, #94a3b8);"></span>
-            <span>Onyx Dark</span>
-          </button>
-          <button class="theme-swatch-btn ${currentTheme === "emerald-focus" ? "is-active" : ""}" type="button" data-set-theme="emerald-focus">
-            <span class="swatch-color" style="background: linear-gradient(135deg, #00ff88, #00e676);"></span>
-            <span>Emerald</span>
-          </button>
-          <button class="theme-swatch-btn ${currentTheme === "solar-gold" ? "is-active" : ""}" type="button" data-set-theme="solar-gold">
-            <span class="swatch-color" style="background: linear-gradient(135deg, #ffb700, #ffd700);"></span>
-            <span>Solar Gold</span>
-          </button>
-          <button class="theme-swatch-btn ${currentTheme === "hyper-violet" ? "is-active" : ""}" type="button" data-set-theme="hyper-violet">
-            <span class="swatch-color" style="background: linear-gradient(135deg, #a78bfa, #c084fc);"></span>
-            <span>Hyper Violet</span>
-          </button>
-          <button class="theme-swatch-btn ${currentTheme === "crimson-drive" ? "is-active" : ""}" type="button" data-set-theme="crimson-drive">
-            <span class="swatch-color" style="background: linear-gradient(135deg, #ff4757, #ff6b81);"></span>
-            <span>Crimson</span>
-          </button>
-        </div>
-      </div>
-
-      ${currentUser ? '<button class="delete-button profile-signout-button" type="button" data-sign-out style="margin-top: 6px;">Log out</button>' : ''}
+      <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
     </div>
   `;
 
@@ -2445,20 +2447,6 @@ function renderAccountControls() {
     menu.hidden = isOpen;
     menuButton.setAttribute("aria-expanded", String(!isOpen));
   });
-
-  chip.querySelectorAll("[data-set-theme]").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const selectedTheme = btn.dataset.setTheme;
-      applyTheme(selectedTheme);
-      renderAccountControls();
-      const newMenu = chip.querySelector("[data-profile-menu]");
-      const newMenuBtn = chip.querySelector("[data-profile-menu-toggle]");
-      if (newMenu) newMenu.hidden = false;
-      if (newMenuBtn) newMenuBtn.setAttribute("aria-expanded", "true");
-    });
-  });
-
   chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
     menu.hidden = true;
     menuButton?.setAttribute("aria-expanded", "false");
@@ -3743,6 +3731,7 @@ function bindNotificationControls() {
 }
 
 async function initializeApp() {
+  ensureAuthBootstrapLoader();
   document.body.classList.add("is-auth-loading");
   ensureAuthScreen();
   bindAuthControls();
@@ -3759,12 +3748,21 @@ async function initializeApp() {
   initSupabaseClient();
 
   if (isLocalPreview()) {
+    updateBootstrapStatus("Loading workspace...");
     await bootstrapUserState(null);
   } else if (supabaseClient) {
     try {
+      updateBootstrapStatus("Verifying credentials...");
       const { data, error } = await supabaseClient.auth.getSession();
       if (error) throw error;
-      await bootstrapUserState(data.session);
+      
+      if (data.session) {
+        updateBootstrapStatus("Loading user profile & data...");
+        await bootstrapUserState(data.session);
+      } else {
+        applyState(loadState());
+      }
+
       supabaseClient.auth.onAuthStateChange(async (event, session) => {
         if (!authInitialized && event === "INITIAL_SESSION") return;
         await bootstrapUserState(session);
@@ -3783,6 +3781,10 @@ async function initializeApp() {
   authInitialized = true;
   evaluateRemindersAndDeadlines();
   render();
+  setAuthVisibility();
+
+  // Smoothly dismiss initialization loader
+  dismissAuthBootstrapLoader();
   setAuthVisibility();
   window.setInterval(() => {
     renderTodayReadouts();
