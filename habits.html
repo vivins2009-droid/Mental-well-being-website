@@ -8,6 +8,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="app.js?v=task-calendar" defer></script>
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body data-page="habits">
   <div class="app-shell">
@@ -33,125 +37,6 @@
           <a class="text-button link-button back-link" href="app.html#dashboard">Back to dashboard</a>
         </div>
       </header>
-
-      <section class="metric-grid command-metric-grid habit-command-deck" aria-label="Habit summary">
-        <article class="metric-card primary command-card reactor-card habit-reactor-card">
-          <div class="metric-visual reactor-visual" data-command-ring="habitScore" aria-hidden="true">
-            <span class="reactor-ring outer"></span>
-            <span class="reactor-ring middle"></span>
-            <span class="reactor-core"></span>
-            <strong data-metric="habitScore">0%</strong>
-          </div>
-          <strong class="reactor-badge" data-metric="habitScore" aria-hidden="true">0%</strong>
-          <div class="metric-copy">
-            <span>Today habit score</span>
-            <strong data-metric="habitScore">0%</strong>
-            <div class="progress-track"><span data-bar="habitScore"></span></div>
-          </div>
-        </article>
-        <article class="metric-card command-card cadence-card">
-          <div class="metric-visual cadence-visual" data-command-grid="habitScore" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="metric-copy">
-            <span>Done today</span>
-            <strong data-metric="checksCompleted">0</strong>
-            <p data-copy="habitPlanned">Out of 0 planned</p>
-          </div>
-        </article>
-        <article class="metric-card command-card tower-card">
-          <div class="metric-visual tower-visual" data-command-tower="bestStreak" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="metric-copy">
-            <span>Strongest habit</span>
-            <strong data-metric="strongestHabit">None</strong>
-            <p data-copy="strongestStreak">0 day streak</p>
-          </div>
-        </article>
-        <article class="metric-card command-card beacon-card">
-          <div class="metric-visual beacon-visual" aria-hidden="true">
-            <span></span>
-            <span></span>
-          </div>
-          <div class="metric-copy">
-            <span>Missed today</span>
-            <strong data-metric="missedToday">0</strong>
-            <p data-metric="recoveryHabit">None</p>
-          </div>
-        </article>
-      </section>
-
-      <section class="workspace-grid lower">
-        <article class="panel command-panel streak-panel streak-command-panel">
-          <div class="panel-hologram streak-hologram" aria-hidden="true">
-            <span></span>
-            <span></span>
-          </div>
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Streaks</p>
-              <h2>Momentum board</h2>
-            </div>
-          </div>
-          <div class="streak-list" data-streak-list></div>
-          <div class="empty-state compact" data-empty="streaks">
-            <strong>No streaks yet.</strong>
-            <span>Add habits and start checking today.</span>
-          </div>
-          <div class="reward-box">
-            <span>Today</span>
-            <strong data-metric="weeklyChecks">0 / 0 habits done today</strong>
-          </div>
-        </article>
-
-        <article class="panel command-panel weekly-target-panel">
-          <div class="panel-hologram weekly-hologram" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Daily target</p>
-              <h2>Progress at a glance</h2>
-            </div>
-          </div>
-          <div class="empty-state compact">
-            <strong data-metric="checksCompleted">0</strong>
-            <span data-copy="habitPlanned">Out of 0 planned</span>
-          </div>
-        </article>
-      </section>
-
-      <section class="panel command-panel habit-panel weekly-overview-panel">
-        <div class="panel-hologram habit-grid-hologram" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Daily overview</p>
-            <h2>Today and recent days</h2>
-          </div>
-        </div>
-
-        <div class="habit-table" aria-label="Daily habit checklist" data-habit-table></div>
-        <div class="empty-state" data-empty="habitsPage">
-          <strong>No habits yet.</strong>
-          <span>Add your first habit below. Then check it off for today.</span>
-        </div>
-      </section>
 
       <section class="panel command-panel add-habit-panel habit-launch-panel">
         <div class="panel-hologram habit-launch-hologram" aria-hidden="true">
@@ -400,6 +285,125 @@
             <button class="ghost-button" type="button" data-add-another="habit">Add another habit</button>
             <a class="text-button link-button" href="app.html#dashboard">Return to dashboard</a>
           </div>
+        </div>
+      </section>
+
+      <section class="metric-grid command-metric-grid habit-command-deck" aria-label="Habit summary">
+        <article class="metric-card primary command-card reactor-card habit-reactor-card">
+          <div class="metric-visual reactor-visual" data-command-ring="habitScore" aria-hidden="true">
+            <span class="reactor-ring outer"></span>
+            <span class="reactor-ring middle"></span>
+            <span class="reactor-core"></span>
+            <strong data-metric="habitScore">0%</strong>
+          </div>
+          <strong class="reactor-badge" data-metric="habitScore" aria-hidden="true">0%</strong>
+          <div class="metric-copy">
+            <span>Today habit score</span>
+            <strong data-metric="habitScore">0%</strong>
+            <div class="progress-track"><span data-bar="habitScore"></span></div>
+          </div>
+        </article>
+        <article class="metric-card command-card cadence-card">
+          <div class="metric-visual cadence-visual" data-command-grid="habitScore" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Done today</span>
+            <strong data-metric="checksCompleted">0</strong>
+            <p data-copy="habitPlanned">Out of 0 planned</p>
+          </div>
+        </article>
+        <article class="metric-card command-card tower-card">
+          <div class="metric-visual tower-visual" data-command-tower="bestStreak" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Strongest habit</span>
+            <strong data-metric="strongestHabit">None</strong>
+            <p data-copy="strongestStreak">0 day streak</p>
+          </div>
+        </article>
+        <article class="metric-card command-card beacon-card">
+          <div class="metric-visual beacon-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="metric-copy">
+            <span>Missed today</span>
+            <strong data-metric="missedToday">0</strong>
+            <p data-metric="recoveryHabit">None</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace-grid lower">
+        <article class="panel command-panel streak-panel streak-command-panel">
+          <div class="panel-hologram streak-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Streaks</p>
+              <h2>Momentum board</h2>
+            </div>
+          </div>
+          <div class="streak-list" data-streak-list></div>
+          <div class="empty-state compact" data-empty="streaks">
+            <strong>No streaks yet.</strong>
+            <span>Add habits and start checking today.</span>
+          </div>
+          <div class="reward-box">
+            <span>Today</span>
+            <strong data-metric="weeklyChecks">0 / 0 habits done today</strong>
+          </div>
+        </article>
+
+        <article class="panel command-panel weekly-target-panel">
+          <div class="panel-hologram weekly-hologram" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Daily target</p>
+              <h2>Progress at a glance</h2>
+            </div>
+          </div>
+          <div class="empty-state compact">
+            <strong data-metric="checksCompleted">0</strong>
+            <span data-copy="habitPlanned">Out of 0 planned</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel command-panel habit-panel weekly-overview-panel">
+        <div class="panel-hologram habit-grid-hologram" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Daily overview</p>
+            <h2>Today and recent days</h2>
+          </div>
+        </div>
+
+        <div class="habit-table" aria-label="Daily habit checklist" data-habit-table></div>
+        <div class="empty-state" data-empty="habitsPage">
+          <strong>No habits yet.</strong>
+          <span>Add your first habit above. Then check it off for today.</span>
         </div>
       </section>
     </main>

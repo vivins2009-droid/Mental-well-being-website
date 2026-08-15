@@ -2572,6 +2572,13 @@ function renderAccountControls() {
     return;
   }
 
+  if (!chip) {
+    chip = document.createElement("div");
+    chip.className = "account-chip";
+    chip.dataset.accountChip = "";
+    document.body.append(chip);
+  }
+
   chip.innerHTML = `
     <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
       <span class="profile-head" aria-hidden="true"></span>
@@ -2583,31 +2590,6 @@ function renderAccountControls() {
         <span>${escapeHtml(userEmail() || "Signed in")}</span>
         <div class="user-plan-badge free-active">Free &amp; Unlimited Access</div>
         <em data-sync-status>${escapeHtml(syncStatus)}</em>
-      </div>
-      <div class="profile-theme-section">
-        <span class="theme-section-title">Color Theme</span>
-        <div class="theme-options-grid">
-          <button type="button" class="theme-opt-btn" data-set-theme="cyber" title="Cyber Cyan">
-            <span class="theme-preview-dot" style="background:#00f6ff;"></span>
-            <span>Cyber</span>
-          </button>
-          <button type="button" class="theme-opt-btn" data-set-theme="black" title="Obsidian Black">
-            <span class="theme-preview-dot" style="background:#ffffff; border:1px solid #777;"></span>
-            <span>Black</span>
-          </button>
-          <button type="button" class="theme-opt-btn" data-set-theme="sapphire" title="Midnight Sapphire">
-            <span class="theme-preview-dot" style="background:#3b82f6;"></span>
-            <span>Sapphire</span>
-          </button>
-          <button type="button" class="theme-opt-btn" data-set-theme="amber" title="Sunset Amber">
-            <span class="theme-preview-dot" style="background:#f59e0b;"></span>
-            <span>Amber</span>
-          </button>
-          <button type="button" class="theme-opt-btn" data-set-theme="violet" title="Neon Violet">
-            <span class="theme-preview-dot" style="background:#8b5cf6;"></span>
-            <span>Violet</span>
-          </button>
-        </div>
       </div>
       <button class="delete-button profile-signout-button" type="button" data-sign-out>Log out</button>
     </div>
@@ -2621,16 +2603,6 @@ function renderAccountControls() {
     menu.hidden = isOpen;
     menuButton.setAttribute("aria-expanded", String(!isOpen));
   });
-
-  chip.querySelectorAll("[data-set-theme]").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      applyTheme(btn.dataset.setTheme);
-    });
-  });
-
-  applyTheme();
-
   chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
     menu.hidden = true;
     menuButton?.setAttribute("aria-expanded", "false");
@@ -3984,7 +3956,6 @@ function bindNotificationControls() {
 }
 
 async function initializeApp() {
-  applyTheme();
   document.body.classList.add("is-auth-loading");
   ensureAuthScreen();
   bindAuthControls();
