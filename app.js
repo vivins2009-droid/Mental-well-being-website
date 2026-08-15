@@ -2605,13 +2605,9 @@ function setAuthStatus(message) {
   });
 }
 
-function renderAccountChip() {
+function renderAccountControls() {
   const syncStatus = getSyncStatusText();
   let chip = document.querySelector("[data-account-chip]");
-  if (!currentUser) {
-    chip?.remove();
-    return;
-  }
 
   if (!chip) {
     chip = document.createElement("div");
@@ -2621,6 +2617,8 @@ function renderAccountChip() {
   }
 
   const currentTheme = getActiveTheme();
+  const displayName = currentUser ? authDisplayName() : "Planwell User";
+  const displayEmail = currentUser ? (userEmail() || "Signed in") : "Free Account";
 
   chip.innerHTML = `
     <button class="profile-button" type="button" data-profile-menu-toggle aria-label="Open profile menu" aria-expanded="false">
@@ -2629,8 +2627,8 @@ function renderAccountChip() {
     </button>
     <div class="profile-menu" data-profile-menu hidden>
       <div class="profile-menu-copy">
-        <strong>${escapeHtml(authDisplayName())}</strong>
-        <span>${escapeHtml(userEmail() || "Signed in")}</span>
+        <strong>${escapeHtml(displayName)}</strong>
+        <span>${escapeHtml(displayEmail)}</span>
         <div class="user-plan-badge free-active">Free &amp; Unlimited Access</div>
         <em data-sync-status>${escapeHtml(syncStatus)}</em>
       </div>
@@ -2665,7 +2663,7 @@ function renderAccountChip() {
         </div>
       </div>
 
-      <button class="delete-button profile-signout-button" type="button" data-sign-out style="margin-top: 6px;">Log out</button>
+      ${currentUser ? '<button class="delete-button profile-signout-button" type="button" data-sign-out style="margin-top: 6px;">Log out</button>' : ''}
     </div>
   `;
 
@@ -2683,13 +2681,33 @@ function renderAccountChip() {
       e.stopPropagation();
       const selectedTheme = btn.dataset.setTheme;
       applyTheme(selectedTheme);
-      renderAccountChip();
+      renderAccountControls();
       const newMenu = chip.querySelector("[data-profile-menu]");
       const newMenuBtn = chip.querySelector("[data-profile-menu-toggle]");
       if (newMenu) newMenu.hidden = false;
       if (newMenuBtn) newMenuBtn.setAttribute("aria-expanded", "true");
     });
   });
+
+  chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
+    menu.hidden = true;
+    menuButton?.setAttribute("aria-expanded", "false");
+    openDeleteConfirm({
+      eyebrow: "Confirm logout",
+      title: "Log out?",
+      copy: "You will return to the login screen. Your latest saved tracker state will stay connected to this account.",
+      confirmLabel: "Log out",
+      onConfirm: async () => {
+        if (supabaseClient) await supabaseClient.auth.signOut();
+        authSession = null;
+        currentUser = null;
+        applyState(createEmptyState());
+        render();
+        setAuthVisibility();
+      }
+    });
+  });
+}
 
   chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
     menu.hidden = true;
