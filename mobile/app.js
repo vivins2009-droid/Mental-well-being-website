@@ -2479,26 +2479,6 @@ function renderAccountControls() {
   });
 }
 
-  chip.querySelector("[data-sign-out]")?.addEventListener("click", async () => {
-    menu.hidden = true;
-    menuButton?.setAttribute("aria-expanded", "false");
-    openDeleteConfirm({
-      eyebrow: "Confirm logout",
-      title: "Log out?",
-      copy: "You will return to the login screen. Your latest saved tracker state will stay connected to this account.",
-      confirmLabel: "Log out",
-      onConfirm: async () => {
-        if (supabaseClient) await supabaseClient.auth.signOut();
-        authSession = null;
-        currentUser = null;
-        applyState(createEmptyState());
-        render();
-        setAuthVisibility();
-      }
-    });
-  });
-}
-
 document.addEventListener("click", (event) => {
   if (event.target.closest("[data-account-chip]")) return;
   document.querySelectorAll("[data-profile-menu]").forEach((menu) => {
